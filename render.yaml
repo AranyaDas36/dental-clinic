@@ -12,15 +12,25 @@ services:
         value: production
       - key: PORT
         value: 4000
-      # Sensitive vars — set these in the Render dashboard, NOT here:
-      # MONGODB_URI
-      # CORS_ORIGIN
-      # COOKIE_SECURE=true
-      # SESSION_ABSOLUTE_TTL_HOURS=12
-      # SESSION_IDLE_TTL_MINUTES=30
-      # COOKIE_NAME=dental_session
-      # CSRF_COOKIE_NAME=dental_csrf
-      # CLOUDINARY_CLOUD_NAME
-      # CLOUDINARY_API_KEY
-      # CLOUDINARY_API_SECRET
-      # CLOUDINARY_FOLDER=dental-clinic
+      - key: MONGODB_URI
+        value: mongodb://hasteop69_db_user:DbtEj0yQa4AkOVQl@ac-hai2tm5-shard-00-00.dc9stzp.mongodb.net:27017,ac-hai2tm5-shard-00-01.dc9stzp.mongodb.net:27017,ac-hai2tm5-shard-00-02.dc9stzp.mongodb.net:27017/dental?ssl=true&replicaSet=atlas-hogz1g-shard-0&authSource=admin
+      - key: CORS_ORIGIN
+        value: https://dental-clinic.vercel.app
+      - key: COOKIE_SECURE
+        value: true
+      - key: SESSION_ABSOLUTE_TTL_HOURS
+        value: 12
+      - key: SESSION_IDLE_TTL_MINUTES
+        value: 30
+      - key: COOKIE_NAME
+        value: dental_session
+      - key: CSRF_COOKIE_NAME
+        value: dental_csrf
+      - key: CLOUDINARY_CLOUD_NAME
+        value: qinlyvnw
+      - key: CLOUDINARY_API_KEY
+        value: 669859543261646
+      - key: CLOUDINARY_API_SECRET
+        value: twoE3Nq3eStu-3MH8ENPGAx0iXs
+      - key: CLOUDINARY_FOLDER
+        value: dental-clinic
