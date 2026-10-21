@@ -13,7 +13,7 @@ services:
       - key: PORT
         value: 4000
       - key: MONGODB_URI
-        value: mongodb://hasteop69_db_user:DbtEj0yQa4AkOVQl@ac-hai2tm5-shard-00-00.dc9stzp.mongodb.net:27017,ac-hai2tm5-shard-00-01.dc9stzp.mongodb.net:27017,ac-hai2tm5-shard-00-02.dc9stzp.mongodb.net:27017/dental?ssl=true&replicaSet=atlas-hogz1g-shard-0&authSource=admin
+        value: mongodb+srv://hasteop69_db_user:DbtEj0yQa4AkOVQl@cluster0.dc9stzp.mongodb.net/dental?retryWrites=true&w=majority
       - key: CORS_ORIGIN
         value: https://dental-clinic.vercel.app
       - key: COOKIE_SECURE
