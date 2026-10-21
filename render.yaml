@@ -15,7 +15,7 @@ services:
       - key: MONGODB_URI
         value: mongodb+srv://hasteop69_db_user:DbtEj0yQa4AkOVQl@cluster0.dc9stzp.mongodb.net/dental?retryWrites=true&w=majority
       - key: CORS_ORIGIN
-        value: https://dental-clinic.vercel.app
+        value: https://dental-clinic-jbw0.vercel.app
       - key: COOKIE_SECURE
         value: true
       - key: SESSION_ABSOLUTE_TTL_HOURS
