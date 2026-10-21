@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: dental-backend
+    runtime: node
+    region: singapore
+    plan: free
+    # Root is the REPO root, not /server — because we must build shared first
+    buildCommand: npm install -g pnpm@10.34.4 && pnpm install --frozen-lockfile && pnpm build:shared && pnpm build:server
+    startCommand: node server/dist/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      # Sensitive vars — set these in the Render dashboard, NOT here:
+      # MONGODB_URI
+      # CORS_ORIGIN
+      # COOKIE_SECURE=true
+      # SESSION_ABSOLUTE_TTL_HOURS=12
+      # SESSION_IDLE_TTL_MINUTES=30
+      # COOKIE_NAME=dental_session
+      # CSRF_COOKIE_NAME=dental_csrf
+      # CLOUDINARY_CLOUD_NAME
+      # CLOUDINARY_API_KEY
+      # CLOUDINARY_API_SECRET
+      # CLOUDINARY_FOLDER=dental-clinic

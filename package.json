@@ -1,0 +1,45 @@
+{
+  "name": "dental",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Dental clinic website with authenticated admin CMS",
+  "packageManager": "pnpm@10.34.4",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @dental/shared build && pnpm -r --parallel --filter @dental/shared --filter @dental/server --filter @dental/client run dev",
+    "dev:server": "pnpm --filter @dental/server dev",
+    "dev:client": "pnpm --filter @dental/client dev",
+    "build": "pnpm --filter @dental/shared build && pnpm --filter @dental/server build && pnpm --filter @dental/client build",
+    "build:shared": "pnpm --filter @dental/shared build",
+    "build:server": "pnpm --filter @dental/server build",
+    "build:client": "pnpm --filter @dental/client build",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "pnpm -r run lint",
+    "lint:fix": "pnpm -r run lint:fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm -r run test",
+    "test:server": "pnpm --filter @dental/server test",
+    "test:client": "pnpm --filter @dental/client test",
+    "seed:admin": "pnpm --filter @dental/server seed:admin",
+    "seed:demo": "pnpm --filter @dental/server seed:demo"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.37.0",
+    "eslint": "^9.37.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "argon2",
+      "esbuild",
+      "mongodb-memory-server"
+    ]
+  }
+}
