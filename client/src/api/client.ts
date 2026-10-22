@@ -26,6 +26,10 @@ function getCsrfFromCookie(): string | null {
 
 let cachedCsrfToken: string | null = null;
 
+export function updateCsrfToken(token: string): void {
+  cachedCsrfToken = token;
+}
+
 export function buildApiUrl(path: string): string {
   const base = clientEnv.VITE_API_BASE_URL.replace(/\/+$/, '');
   const cleanPath = path.startsWith('/') ? path : `/${path}`;

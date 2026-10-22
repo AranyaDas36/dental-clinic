@@ -9,7 +9,7 @@ import type {
   WebsitePublishInput,
   WebsiteSnapshot,
 } from '@dental/shared';
-import { apiRequest } from './client';
+import { apiRequest, updateCsrfToken } from './client';
 
 export interface AdminUserSafe {
   id: string;
@@ -129,28 +129,41 @@ export interface AdminMediaItem {
 }
 
 // Auth
-export async function loginAdmin(data: LoginInput): Promise<{ admin: AdminUserSafe }> {
-  return apiRequest<{ admin: AdminUserSafe }>('/auth/login', {
+export async function loginAdmin(
+  data: LoginInput,
+): Promise<{ admin: AdminUserSafe; csrfToken: string }> {
+  const result = await apiRequest<{ admin: AdminUserSafe; csrfToken: string }>('/auth/login', {
     method: 'POST',
     body: data,
   });
+  updateCsrfToken(result.csrfToken);
+  return result;
 }
 
-export async function logoutAdmin(): Promise<{ ok: boolean }> {
-  return apiRequest<{ ok: boolean }>('/auth/logout', {
+export async function logoutAdmin(): Promise<{ ok: boolean; csrfToken: string }> {
+  const result = await apiRequest<{ ok: boolean; csrfToken: string }>('/auth/logout', {
     method: 'POST',
   });
+  updateCsrfToken(result.csrfToken);
+  return result;
 }
 
 export async function fetchMe(): Promise<{ admin: AdminUserSafe }> {
   return apiRequest<{ admin: AdminUserSafe }>('/auth/me');
 }
 
-export async function changePassword(data: ChangePasswordInput): Promise<{ admin: AdminUserSafe }> {
-  return apiRequest<{ admin: AdminUserSafe }>('/auth/change-password', {
-    method: 'POST',
-    body: data,
-  });
+export async function changePassword(
+  data: ChangePasswordInput,
+): Promise<{ admin: AdminUserSafe; csrfToken: string }> {
+  const result = await apiRequest<{ admin: AdminUserSafe; csrfToken: string }>(
+    '/auth/change-password',
+    {
+      method: 'POST',
+      body: data,
+    },
+  );
+  updateCsrfToken(result.csrfToken);
+  return result;
 }
 
 // Dashboard

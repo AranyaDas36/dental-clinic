@@ -15,15 +15,15 @@ export async function login(req: Request, res: Response): Promise<void> {
   const input = loginSchema.parse(req.body);
   const result = await loginAdmin(input);
   setSessionCookie(res, result.sessionToken, result.expiresAt);
-  setCsrfCookie(res);
-  sendSuccess(res, { admin: result.admin });
+  const csrfToken = setCsrfCookie(res);
+  sendSuccess(res, { admin: result.admin, csrfToken });
 }
 
 export async function logout(req: Request, res: Response): Promise<void> {
   await logoutAdmin(readSessionToken(req));
   clearSessionCookie(res);
-  setCsrfCookie(res);
-  sendSuccess(res, { ok: true });
+  const csrfToken = setCsrfCookie(res);
+  sendSuccess(res, { ok: true, csrfToken });
 }
 
 export async function me(req: Request, res: Response): Promise<void> {
@@ -41,8 +41,8 @@ export async function changePassword(req: Request, res: Response): Promise<void>
   const input = changePasswordSchema.parse(req.body);
   const result = await changeAdminPassword(req.adminUser.id, input, req.sessionToken);
   setSessionCookie(res, result.sessionToken, result.expiresAt);
-  setCsrfCookie(res);
-  sendSuccess(res, { admin: result.admin });
+  const csrfToken = setCsrfCookie(res);
+  sendSuccess(res, { admin: result.admin, csrfToken });
 }
 
 export async function csrf(_req: Request, res: Response): Promise<void> {

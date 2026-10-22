@@ -19,6 +19,7 @@ describe('Authentication', () => {
     expect(response.status).toBe(200);
     expect(response.body.data.admin.email).toBe(email);
     expect(response.body.data.admin.passwordHash).toBeUndefined();
+    expect(response.body.data.csrfToken).toEqual(expect.any(String));
     expect(response.headers['set-cookie']).toBeDefined();
   });
 
@@ -71,6 +72,7 @@ describe('Authentication', () => {
 
     expect(changed.status).toBe(200);
     expect(changed.body.data.admin.mustChangePassword).toBe(false);
+    expect(changed.body.data.csrfToken).toEqual(expect.any(String));
 
     const csrf2 = await getCsrf(agent);
     const dashboard = await agent.get('/api/v1/admin/dashboard').set('x-csrf-token', csrf2);
