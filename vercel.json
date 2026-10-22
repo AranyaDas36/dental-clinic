@@ -1,7 +1,7 @@
 {
-  "buildCommand": "npm install -g pnpm@10.34.4 && pnpm install --frozen-lockfile && pnpm build:shared && pnpm --filter @dental/client build",
+  "buildCommand": "pnpm --filter @dental/shared build && pnpm --filter @dental/client build",
   "outputDirectory": "client/dist",
-  "installCommand": "echo 'install handled in buildCommand'",
+  "installCommand": "pnpm install --frozen-lockfile",
   "framework": "vite",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
