@@ -16,6 +16,7 @@ interface PublicSectionRendererProps {
   clinic: ClinicInfo;
   media?: Record<string, PublicMediaItem>;
   services: PublicServiceItem[];
+  servicesLoading?: boolean;
   reviews: PublicReviewItem[];
   onSelectService?: (service: PublicServiceItem) => void;
   onReviewSubmitted?: () => void;
@@ -27,6 +28,7 @@ export function PublicSectionRenderer({
   clinic,
   media = {},
   services,
+  servicesLoading = false,
   reviews,
   onSelectService,
   onReviewSubmitted,
@@ -76,8 +78,8 @@ export function PublicSectionRenderer({
                 <ServicesSection
                   key={section.id}
                   services={services}
+                  isLoading={servicesLoading}
                   settings={section.settings}
-                  layoutVariant={section.layoutVariant}
                   onSelectService={onSelectService}
                 />
               );

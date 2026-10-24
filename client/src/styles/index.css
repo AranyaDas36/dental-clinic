@@ -186,8 +186,19 @@
   transform: translateY(0);
 }
 
+.services-card-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.services-card-reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .gallery-reveal {
+  .gallery-reveal,
+  .services-card-reveal {
     opacity: 1;
     transform: none;
   }

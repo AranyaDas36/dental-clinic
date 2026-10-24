@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { publicAppointmentCreateSchema, type PublicAppointmentCreate } from '@dental/shared';
@@ -33,6 +33,7 @@ export function AppointmentSection({
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<PublicAppointmentCreate>({
     resolver: zodResolver(publicAppointmentCreateSchema),
@@ -46,6 +47,12 @@ export function AppointmentSection({
       message: '',
     },
   });
+
+  useEffect(() => {
+    if (preselectedServiceId) {
+      setValue('requestedServiceId', preselectedServiceId);
+    }
+  }, [preselectedServiceId, setValue]);
 
   async function onSubmit(data: PublicAppointmentCreate) {
     setIsSubmitting(true);

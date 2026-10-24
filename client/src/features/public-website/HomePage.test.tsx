@@ -227,7 +227,8 @@ describe('HomePage', () => {
     expect(
       await screen.findByRole('heading', { name: 'Comprehensive Check-up' }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/From ₹500/i)).toBeInTheDocument();
+    expect(screen.getByText('Starting from')).toBeInTheDocument();
+    expect(screen.getByText('₹500')).toBeInTheDocument();
   });
 
   it('renders approved patient reviews and clinic response', async () => {

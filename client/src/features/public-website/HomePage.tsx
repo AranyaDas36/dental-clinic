@@ -159,6 +159,7 @@ export function HomePage() {
         clinic={clinic}
         media={websiteQuery.data.media ?? {}}
         services={services}
+        servicesLoading={servicesQuery.isLoading}
         reviews={reviews}
         onSelectService={handleSelectService}
         onReviewSubmitted={handleReviewSubmitted}
