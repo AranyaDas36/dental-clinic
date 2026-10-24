@@ -2,7 +2,6 @@ import type { ClinicInfo, WebsiteSnapshot } from '@dental/shared';
 import type { PublicMediaItem, PublicReviewItem, PublicServiceItem } from '@/api/public';
 import { HeaderSection } from './sections/HeaderSection';
 import { HeroSection } from './sections/HeroSection';
-import { TrustSection } from './sections/TrustSection';
 import { ServicesSection } from './sections/ServicesSection';
 import { DentistSection } from './sections/DentistSection';
 import { WhyChooseUsSection } from './sections/WhyChooseUsSection';
@@ -36,7 +35,7 @@ export function PublicSectionRenderer({
   const headerSection = snapshot.sections.find((s) => s.type === 'header');
   const footerSection = snapshot.sections.find((s) => s.type === 'footer');
   const bodySections = snapshot.sections.filter(
-    (s) => s.type !== 'header' && s.type !== 'footer' && s.enabled,
+    (s) => s.type !== 'header' && s.type !== 'footer' && s.type !== 'trust' && s.enabled,
   );
 
   return (
@@ -63,15 +62,6 @@ export function PublicSectionRenderer({
                   key={section.id}
                   settings={section.settings}
                   media={media}
-                  layoutVariant={section.layoutVariant}
-                />
-              );
-
-            case 'trust':
-              return (
-                <TrustSection
-                  key={section.id}
-                  settings={section.settings}
                   layoutVariant={section.layoutVariant}
                 />
               );

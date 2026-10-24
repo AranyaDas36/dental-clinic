@@ -76,7 +76,7 @@ describe('production media workflow', () => {
     const clinic = {
       ...DEFAULT_CLINIC,
       name: 'Test Dental Clinic',
-      logoMediaId: media.id,
+      dentist: { ...DEFAULT_CLINIC.dentist, portraitMediaId: media.id },
       contact: {
         ...DEFAULT_CLINIC.contact,
         phone: '+91 98765 43210',
@@ -85,15 +85,6 @@ describe('production media workflow', () => {
       },
     };
     const draft = createDefaultWebsiteSnapshot();
-    draft.sections = draft.sections.map((section) => {
-      if (section.type === 'hero') {
-        return { ...section, settings: { ...section.settings, imageMediaId: media.id } };
-      }
-      if (section.type === 'gallery') {
-        return { ...section, settings: { ...section.settings, mediaIds: [media.id] } };
-      }
-      return section;
-    });
 
     const saved = await agent.put('/api/v1/admin/website/draft').set('x-csrf-token', csrf).send({
       expectedDraftVersion: draftResponse.body.data.draftVersion,
@@ -115,6 +106,7 @@ describe('production media workflow', () => {
       altText: 'Clinic reception',
       caption: '',
     });
+    expect(publicWebsite.body.data.clinic.dentist.portraitMediaId).toBe(media.id);
 
     const currentDraft = await agent.get('/api/v1/admin/website/draft');
     const unreferenced = await agent
@@ -122,7 +114,7 @@ describe('production media workflow', () => {
       .set('x-csrf-token', csrf)
       .send({
         expectedDraftVersion: currentDraft.body.data.draftVersion,
-        clinic: { ...clinic, logoMediaId: null },
+        clinic: { ...clinic, dentist: { ...clinic.dentist, portraitMediaId: null } },
         draft: createDefaultWebsiteSnapshot(),
       });
     expect(unreferenced.status).toBe(200);

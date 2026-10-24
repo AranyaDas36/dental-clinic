@@ -213,6 +213,8 @@ describe('HomePage', () => {
         name: /Gentle dental care in a calm clinic setting/i,
       }),
     ).toBeInTheDocument();
+    expect(document.querySelector('.hero-illustration')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.queryByText('Clinic Highlights')).not.toBeInTheDocument();
   });
 
   it('renders published services with INR pricing', async () => {

@@ -23,11 +23,14 @@ export function ContentEditorPage() {
   });
 
   const mediaItems = mediaQuery.data?.items ?? [];
+  const selectedDentistPortrait = mediaItems.find(
+    (item) => item.id === clinic?.dentist.portraitMediaId,
+  );
 
   useEffect(() => {
     if (data) {
       setClinic(data.clinic);
-      setSections([...data.draft.sections]);
+      setSections(data.draft.sections.filter((section) => section.type !== 'trust'));
       setSeo(data.draft.seo);
       setFooter(data.draft.footer);
     }
@@ -494,6 +497,42 @@ export function ContentEditorPage() {
                   </option>
                 ))}
               </select>
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-stone-500">
+                Upload the photo in Media Library, select it here, then save the draft and publish
+                for it to appear on the public site.
+                <button
+                  type="button"
+                  disabled={mediaQuery.isFetching}
+                  onClick={() => void mediaQuery.refetch()}
+                  className="font-semibold text-emerald-800 underline disabled:opacity-50"
+                >
+                  {mediaQuery.isFetching ? 'Refreshing…' : 'Refresh images'}
+                </button>
+              </div>
+              {mediaQuery.isSuccess && mediaItems.length === 0 && (
+                <p className="mt-2 text-xs text-stone-500">
+                  No images found. Upload a photo in Media Library first.
+                </p>
+              )}
+              {mediaQuery.isError && (
+                <div className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-rose-50 p-2 text-xs text-rose-800">
+                  <span>Could not load Media Library images.</span>
+                  <button
+                    type="button"
+                    onClick={() => void mediaQuery.refetch()}
+                    className="font-semibold underline"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+              {selectedDentistPortrait && (
+                <img
+                  src={selectedDentistPortrait.secureUrl}
+                  alt="Selected dentist portrait preview"
+                  className="mt-3 h-32 w-24 rounded-lg border border-stone-200 object-cover"
+                />
+              )}
             </div>
 
             <div>
@@ -682,84 +721,6 @@ export function ContentEditorPage() {
           )}
 
           {sections.map((section) => {
-            if (section.type === 'trust') {
-              return (
-                <div key={section.id} className="space-y-3 border-t border-stone-100 pt-4">
-                  <h3 className="text-xs font-semibold text-stone-700">Clinic Highlights</h3>
-                  <label className="block text-xs text-stone-600">
-                    Section heading
-                    <input
-                      value={section.settings.heading}
-                      onChange={(e) =>
-                        updateSectionSettings('trust', (current) => ({
-                          ...current,
-                          settings: { ...current.settings, heading: e.target.value },
-                        }))
-                      }
-                      className="mt-1 w-full rounded-xl border border-stone-300 p-2.5 text-xs"
-                    />
-                  </label>
-                  {section.settings.items.map((item, index) => (
-                    <div key={`${section.id}-${index}`} className="grid gap-2 sm:grid-cols-2">
-                      <input
-                        aria-label={`Highlight ${index + 1} label`}
-                        value={item.label}
-                        onChange={(e) =>
-                          updateSectionSettings('trust', (current) => ({
-                            ...current,
-                            settings: {
-                              ...current.settings,
-                              items: current.settings.items.map((entry, itemIndex) =>
-                                itemIndex === index ? { ...entry, label: e.target.value } : entry,
-                              ),
-                            },
-                          }))
-                        }
-                        className="rounded-xl border border-stone-300 p-2.5 text-xs"
-                      />
-                      <div className="flex gap-2">
-                        <input
-                          aria-label={`Highlight ${index + 1} detail`}
-                          value={item.detail}
-                          onChange={(e) =>
-                            updateSectionSettings('trust', (current) => ({
-                              ...current,
-                              settings: {
-                                ...current.settings,
-                                items: current.settings.items.map((entry, itemIndex) =>
-                                  itemIndex === index
-                                    ? { ...entry, detail: e.target.value }
-                                    : entry,
-                                ),
-                              },
-                            }))
-                          }
-                          className="min-w-0 flex-1 rounded-xl border border-stone-300 p-2.5 text-xs"
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateSectionSettings('trust', (current) => ({
-                              ...current,
-                              settings: {
-                                ...current.settings,
-                                items: current.settings.items.filter(
-                                  (_entry, itemIndex) => itemIndex !== index,
-                                ),
-                              },
-                            }))
-                          }
-                          className="rounded-lg border border-stone-200 px-3 text-xs text-stone-600"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            }
-
             if (section.type === 'whyChooseUs') {
               return (
                 <div key={section.id} className="space-y-3 border-t border-stone-100 pt-4">

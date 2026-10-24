@@ -210,16 +210,6 @@ export function createDefaultWebsiteSnapshot(): WebsiteSnapshot {
         },
       },
       {
-        id: 'section-trust',
-        type: 'trust',
-        enabled: true,
-        layoutVariant: 'row',
-        settings: {
-          heading: 'Clinic information',
-          items: [],
-        },
-      },
-      {
         id: 'section-services',
         type: 'services',
         enabled: true,
