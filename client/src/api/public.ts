@@ -9,8 +9,15 @@ import { apiRequest } from './client';
 export interface PublishedWebsiteResponse {
   clinic: ClinicInfo;
   snapshot: WebsiteSnapshot;
+  media: Record<string, PublicMediaItem>;
   version: number;
   publishedAt: string;
+}
+
+export interface PublicMediaItem {
+  url: string;
+  altText: string;
+  caption: string;
 }
 
 export interface PublicServiceItem {
@@ -26,6 +33,8 @@ export interface PublicServiceItem {
   maxPrice: number | null;
   currency: 'INR';
   imageMediaId: string | null;
+  imageUrl: string | null;
+  imageAltText: string;
   isFeatured: boolean;
   isPublished: boolean;
   displayOrder: number;

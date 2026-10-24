@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchWebsiteDraft, updateWebsiteDraft } from '@/api/admin';
+import { fetchAdminMedia, fetchWebsiteDraft, updateWebsiteDraft } from '@/api/admin';
 import type { ClinicInfo, WebsiteSection } from '@dental/shared';
 
 export function ContentEditorPage() {
@@ -14,6 +14,13 @@ export function ContentEditorPage() {
     queryKey: ['admin', 'website', 'draft'],
     queryFn: fetchWebsiteDraft,
   });
+
+  const mediaQuery = useQuery({
+    queryKey: ['admin', 'media'],
+    queryFn: () => fetchAdminMedia({ pageSize: 100 }),
+  });
+
+  const mediaItems = mediaQuery.data?.items ?? [];
 
   useEffect(() => {
     if (data) {
@@ -76,6 +83,58 @@ export function ContentEditorPage() {
       ),
     );
   }
+
+  function updateOpeningHours(
+    day: ClinicInfo['openingHours'][number]['day'],
+    changes: Partial<ClinicInfo['openingHours'][number]>,
+  ) {
+    setClinic((current) =>
+      current
+        ? {
+            ...current,
+            openingHours: current.openingHours.map((hours) =>
+              hours.day === day ? { ...hours, ...changes } : hours,
+            ),
+          }
+        : current,
+    );
+  }
+
+  function updateHeroImage(imageMediaId: string | null) {
+    setSections((previous) =>
+      previous.map((section) =>
+        section.type === 'hero'
+          ? { ...section, settings: { ...section.settings, imageMediaId } }
+          : section,
+      ),
+    );
+  }
+
+  function toggleGalleryImage(imageMediaId: string, checked: boolean) {
+    setSections((previous) =>
+      previous.map((section) =>
+        section.type === 'gallery'
+          ? {
+              ...section,
+              settings: {
+                ...section.settings,
+                mediaIds: checked
+                  ? [...new Set([...section.settings.mediaIds, imageMediaId])]
+                  : section.settings.mediaIds.filter((id) => id !== imageMediaId),
+              },
+            }
+          : section,
+      ),
+    );
+  }
+
+  const heroSection = sections.find(
+    (section): section is Extract<WebsiteSection, { type: 'hero' }> => section.type === 'hero',
+  );
+  const gallerySection = sections.find(
+    (section): section is Extract<WebsiteSection, { type: 'gallery' }> =>
+      section.type === 'gallery',
+  );
 
   return (
     <div className="space-y-6">
@@ -262,6 +321,89 @@ export function ContentEditorPage() {
                 className="mt-1 w-full rounded-xl border border-stone-300 p-2.5 text-xs focus:border-emerald-700 focus:outline-none focus:ring-1 focus:ring-emerald-700"
               />
             </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-stone-700">Clinic Logo</label>
+              <select
+                value={clinic.logoMediaId ?? ''}
+                onChange={(e) => setClinic({ ...clinic, logoMediaId: e.target.value || null })}
+                className="mt-1 w-full rounded-xl border border-stone-300 p-2.5 text-xs"
+              >
+                <option value="">No logo selected</option>
+                {mediaItems.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.altText || item.publicId}
+                  </option>
+                ))}
+              </select>
+              {mediaQuery.isError && (
+                <p className="mt-1 text-xs text-red-700">Unable to load the media library.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-4 border-t border-stone-100 pt-5">
+            <div>
+              <h3 className="font-bold text-stone-900 text-sm">Clinic Operating Hours</h3>
+              <p className="mt-1 text-xs text-stone-500">
+                Set confirmed opening times. This schedule is shown on the public website after
+                publishing.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {clinic.openingHours.map((hours) => (
+                <div
+                  key={hours.day}
+                  className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-stone-200 p-3"
+                >
+                  <span className="text-xs font-semibold capitalize text-stone-800">
+                    {hours.day}
+                  </span>
+                  <label className="flex items-center gap-2 text-xs text-stone-600">
+                    <input
+                      type="checkbox"
+                      checked={hours.closed}
+                      onChange={(e) =>
+                        updateOpeningHours(hours.day, {
+                          closed: e.target.checked,
+                          open: e.target.checked ? null : hours.open,
+                          close: e.target.checked ? null : hours.close,
+                        })
+                      }
+                    />
+                    Closed
+                  </label>
+                  {!hours.closed && (
+                    <div className="col-span-2 grid grid-cols-2 gap-3">
+                      <label className="text-xs text-stone-600">
+                        Opens
+                        <input
+                          type="time"
+                          required
+                          value={hours.open ?? ''}
+                          onChange={(e) =>
+                            updateOpeningHours(hours.day, { open: e.target.value || null })
+                          }
+                          className="mt-1 w-full rounded-lg border border-stone-300 p-2"
+                        />
+                      </label>
+                      <label className="text-xs text-stone-600">
+                        Closes
+                        <input
+                          type="time"
+                          required
+                          value={hours.close ?? ''}
+                          onChange={(e) =>
+                            updateOpeningHours(hours.day, { close: e.target.value || null })
+                          }
+                          className="mt-1 w-full rounded-lg border border-stone-300 p-2"
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -287,6 +429,27 @@ export function ContentEditorPage() {
                 }
                 className="mt-1 w-full rounded-xl border border-stone-300 p-2.5 text-xs focus:border-emerald-700 focus:outline-none focus:ring-1 focus:ring-emerald-700"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-stone-700">Dentist Portrait</label>
+              <select
+                value={clinic.dentist.portraitMediaId ?? ''}
+                onChange={(e) =>
+                  setClinic({
+                    ...clinic,
+                    dentist: { ...clinic.dentist, portraitMediaId: e.target.value || null },
+                  })
+                }
+                className="mt-1 w-full rounded-xl border border-stone-300 p-2.5 text-xs"
+              >
+                <option value="">No portrait selected</option>
+                {mediaItems.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.altText || item.publicId}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -434,6 +597,66 @@ export function ContentEditorPage() {
               </div>
             ))}
           </div>
+
+          {heroSection && (
+            <div className="space-y-2 border-t border-stone-100 pt-4">
+              <label className="block text-xs font-semibold text-stone-700">Hero Image</label>
+              <select
+                value={heroSection.settings.imageMediaId ?? ''}
+                onChange={(e) => updateHeroImage(e.target.value || null)}
+                className="w-full rounded-xl border border-stone-300 p-2.5 text-xs"
+              >
+                <option value="">No hero image</option>
+                {mediaItems.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.altText || item.publicId}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {gallerySection && (
+            <div className="space-y-3 border-t border-stone-100 pt-4">
+              <div>
+                <h3 className="text-xs font-semibold text-stone-700">Gallery Images</h3>
+                <p className="mt-1 text-xs text-stone-500">
+                  Select the uploaded photos to show publicly.
+                </p>
+              </div>
+              {mediaItems.length === 0 ? (
+                <p className="text-xs text-stone-500">
+                  Upload images in the Media Library before selecting them here.
+                </p>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {mediaItems.map((item) => {
+                    const selected = gallerySection.settings.mediaIds.includes(item.id);
+                    return (
+                      <label
+                        key={item.id}
+                        className="flex items-center gap-3 rounded-lg border border-stone-200 p-2"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={(e) => toggleGalleryImage(item.id, e.target.checked)}
+                        />
+                        <img
+                          src={item.secureUrl}
+                          alt=""
+                          className="h-10 w-14 rounded object-cover"
+                        />
+                        <span className="truncate text-xs text-stone-700">
+                          {item.altText || item.publicId}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

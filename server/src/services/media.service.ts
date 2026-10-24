@@ -5,8 +5,10 @@ import { z } from 'zod';
 import { getEnv } from '../config/env.js';
 import { MediaAssetModel } from '../models/MediaAsset.js';
 import { WebsiteConfigModel } from '../models/WebsiteConfig.js';
+import { WebsiteRevisionModel } from '../models/WebsiteRevision.js';
 import { ServiceModel } from '../models/Service.js';
 import { AppError } from '../middleware/error-handler.js';
+import { logger } from '../utils/logger.js';
 
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -17,6 +19,15 @@ const mediaUpdateSchema = z.object({
   altText: z.string().max(300).optional(),
   caption: z.string().max(500).optional(),
 });
+
+function containsExactString(value: unknown, search: string): boolean {
+  if (value === search) return true;
+  if (Array.isArray(value)) return value.some((item) => containsExactString(item, search));
+  if (value && typeof value === 'object') {
+    return Object.values(value).some((item) => containsExactString(item, search));
+  }
+  return false;
+}
 
 function configureCloudinary() {
   const env = getEnv();
@@ -139,12 +150,17 @@ export async function deleteMedia(id: string) {
     }
   }
 
-  configureCloudinary();
-  try {
-    await cloudinary.uploader.destroy(media.publicId, { resource_type: 'image' });
-  } catch {
-    // Continue local cleanup if remote already gone.
+  const revisions = await WebsiteRevisionModel.find().select('clinic snapshot').lean();
+  if (revisions.some((revision) => containsExactString(revision, id))) {
+    throw new AppError(
+      409,
+      'MEDIA_IN_USE',
+      'Media is referenced by a published revision. Remove references before deleting.',
+    );
   }
+
+  configureCloudinary();
+  await cloudinary.uploader.destroy(media.publicId, { resource_type: 'image' });
 
   await MediaAssetModel.deleteOne({ _id: id });
   return { id };
@@ -208,26 +224,42 @@ export async function uploadMedia(
   ) {
     try {
       await cloudinary.uploader.destroy(uploaded.public_id, { resource_type: 'image' });
-    } catch {
-      // ignore cleanup failure
+    } catch (error) {
+      logger.error(
+        { err: error, publicId: uploaded.public_id },
+        'Failed to clean up an image rejected for invalid dimensions',
+      );
     }
     throw new AppError(422, 'INVALID_DIMENSIONS', 'Image dimensions are out of allowed range');
   }
 
-  const created = await MediaAssetModel.create({
-    provider: 'cloudinary',
-    providerAssetId: uploaded.asset_id ?? uploaded.public_id,
-    publicId: uploaded.public_id,
-    secureUrl: uploaded.secure_url,
-    resourceType: 'image',
-    format: uploaded.format,
-    width: uploaded.width,
-    height: uploaded.height,
-    bytes: uploaded.bytes,
-    altText: meta.altText ?? '',
-    caption: meta.caption ?? '',
-    uploadedBy: adminUserId,
-  });
+  let created;
+  try {
+    created = await MediaAssetModel.create({
+      provider: 'cloudinary',
+      providerAssetId: uploaded.asset_id ?? uploaded.public_id,
+      publicId: uploaded.public_id,
+      secureUrl: uploaded.secure_url,
+      resourceType: 'image',
+      format: uploaded.format,
+      width: uploaded.width,
+      height: uploaded.height,
+      bytes: uploaded.bytes,
+      altText: meta.altText ?? '',
+      caption: meta.caption ?? '',
+      uploadedBy: adminUserId,
+    });
+  } catch (error) {
+    try {
+      await cloudinary.uploader.destroy(uploaded.public_id, { resource_type: 'image' });
+    } catch (cleanupError) {
+      logger.error(
+        { err: cleanupError, publicId: uploaded.public_id },
+        'Failed to clean up an image after media record persistence failed',
+      );
+    }
+    throw error;
+  }
 
   return serialize(created);
 }

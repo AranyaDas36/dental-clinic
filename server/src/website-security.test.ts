@@ -7,6 +7,19 @@ import { ReviewModel } from './models/Review.js';
 import { AppointmentRequestModel } from './models/AppointmentRequest.js';
 import { ServiceModel } from './models/Service.js';
 
+function publishableTestClinic() {
+  return {
+    ...DEFAULT_CLINIC,
+    name: 'Test Dental Clinic',
+    contact: {
+      ...DEFAULT_CLINIC.contact,
+      phone: '+91 98765 43210',
+      email: 'clinic@example.in',
+      postalCode: '741223',
+    },
+  };
+}
+
 describe('Website publishing and public isolation', () => {
   it('keeps drafts private until publish', async () => {
     const app = createTestApp();
@@ -22,10 +35,11 @@ describe('Website publishing and public isolation', () => {
     const csrf = await getCsrf(agent);
     const draft = createDefaultWebsiteSnapshot();
     draft.seo.title = 'Secret Draft Title';
+    const clinic = publishableTestClinic();
 
     const saved = await agent.put('/api/v1/admin/website/draft').set('x-csrf-token', csrf).send({
       expectedDraftVersion: draftRes.body.data.draftVersion,
-      clinic: DEFAULT_CLINIC,
+      clinic,
       draft,
     });
     expect(saved.status).toBe(200);
@@ -44,6 +58,70 @@ describe('Website publishing and public isolation', () => {
     expect(publicAfter.status).toBe(200);
     expect(publicAfter.body.data.snapshot.seo.title).toBe('Secret Draft Title');
     expect(publicAfter.body.data.draft).toBeUndefined();
+    expect(publicAfter.body.data.media).toEqual({});
+  });
+
+  it('allows administrators to update and publish validated clinic hours', async () => {
+    const app = createTestApp();
+    const { agent } = await authedAgent(app);
+    const initial = await agent.get('/api/v1/admin/website/draft');
+    const clinic = publishableTestClinic();
+    clinic.openingHours = clinic.openingHours.map((hours) =>
+      hours.day === 'monday'
+        ? { day: 'monday', closed: false, open: '09:30', close: '17:00' }
+        : { ...hours, closed: true, open: null, close: null },
+    );
+    const csrf = await getCsrf(agent);
+    const saved = await agent.put('/api/v1/admin/website/draft').set('x-csrf-token', csrf).send({
+      expectedDraftVersion: initial.body.data.draftVersion,
+      clinic,
+      draft: createDefaultWebsiteSnapshot(),
+    });
+
+    expect(saved.status).toBe(200);
+    const reloaded = await agent.get('/api/v1/admin/website/draft');
+    expect(reloaded.body.data.clinic.openingHours[0]).toEqual({
+      day: 'monday',
+      closed: false,
+      open: '09:30',
+      close: '17:00',
+    });
+
+    const invalidClinic = {
+      ...clinic,
+      openingHours: clinic.openingHours.map((hours) =>
+        hours.day === 'monday' ? { ...hours, open: '18:00', close: '10:00' } : hours,
+      ),
+    };
+    const invalid = await agent.put('/api/v1/admin/website/draft').set('x-csrf-token', csrf).send({
+      expectedDraftVersion: saved.body.data.draftVersion,
+      clinic: invalidClinic,
+      draft: createDefaultWebsiteSnapshot(),
+    });
+    expect(invalid.status).toBe(422);
+
+    const publishCsrf = await getCsrf(agent);
+    const published = await agent
+      .post('/api/v1/admin/website/publish')
+      .set('x-csrf-token', publishCsrf)
+      .send({ expectedDraftVersion: saved.body.data.draftVersion });
+    expect(published.status).toBe(200);
+    const publicWebsite = await request(app).get('/api/v1/public/website');
+    expect(publicWebsite.body.data.clinic.openingHours[0].open).toBe('09:30');
+    expect(publicWebsite.body.data.clinic.openingHours[1].closed).toBe(true);
+  });
+
+  it('prevents publishing the untouched template details', async () => {
+    const app = createTestApp();
+    const { agent } = await authedAgent(app);
+    const draft = await agent.get('/api/v1/admin/website/draft');
+    const csrf = await getCsrf(agent);
+    const response = await agent
+      .post('/api/v1/admin/website/publish')
+      .set('x-csrf-token', csrf)
+      .send({ expectedDraftVersion: draft.body.data.draftVersion });
+    expect(response.status).toBe(422);
+    expect(response.body.error.code).toBe('CONTENT_NOT_READY');
   });
 
   it('returns 409 on concurrent draft edits', async () => {

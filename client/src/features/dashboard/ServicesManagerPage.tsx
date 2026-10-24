@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   createAdminService,
   deleteAdminService,
+  fetchAdminMedia,
   fetchAdminServices,
   updateAdminService,
   type AdminServiceItem,
@@ -10,14 +11,32 @@ import {
 import type { ServiceInput } from '@dental/shared';
 
 function formatServicePrice(service: AdminServiceItem): string {
-  if (service.priceType === 'quote') return 'Quote-based';
-  if (service.priceType === 'fixed' && service.price != null) {
+  if (service.priceType === 'quote') return 'Contact for pricing';
+  if (
+    service.priceType === 'fixed' &&
+    service.price != null &&
+    Number.isFinite(service.price) &&
+    service.price >= 0
+  ) {
     return `₹${service.price.toLocaleString('en-IN')}`;
   }
-  if (service.priceType === 'starting_at' && service.minPrice != null) {
+  if (
+    service.priceType === 'starting_at' &&
+    service.minPrice != null &&
+    Number.isFinite(service.minPrice) &&
+    service.minPrice >= 0
+  ) {
     return `Starting at ₹${service.minPrice.toLocaleString('en-IN')}`;
   }
-  if (service.priceType === 'range' && service.minPrice != null && service.maxPrice != null) {
+  if (
+    service.priceType === 'range' &&
+    service.minPrice != null &&
+    service.maxPrice != null &&
+    Number.isFinite(service.minPrice) &&
+    Number.isFinite(service.maxPrice) &&
+    service.minPrice >= 0 &&
+    service.maxPrice >= service.minPrice
+  ) {
     return `₹${service.minPrice.toLocaleString('en-IN')} – ₹${service.maxPrice.toLocaleString('en-IN')}`;
   }
   return 'Contact clinic';
@@ -42,20 +61,26 @@ export function ServicesManagerPage() {
     category: 'General Dentistry',
     shortDescription: '',
     description: '',
-    priceType: 'fixed',
-    price: 800,
+    priceType: 'quote',
+    price: null,
     minPrice: null,
     maxPrice: null,
     currency: 'INR',
     isFeatured: false,
     isPublished: true,
     displayOrder: 1,
+    imageMediaId: null,
   });
   const [error, setError] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'services'],
     queryFn: () => fetchAdminServices({ pageSize: 50 }),
+  });
+
+  const mediaQuery = useQuery({
+    queryKey: ['admin', 'media'],
+    queryFn: () => fetchAdminMedia({ pageSize: 100 }),
   });
 
   const createMutation = useMutation({
@@ -101,14 +126,15 @@ export function ServicesManagerPage() {
       category: 'General Dentistry',
       shortDescription: '',
       description: '',
-      priceType: 'fixed',
-      price: 800,
+      priceType: 'quote',
+      price: null,
       minPrice: null,
       maxPrice: null,
       currency: 'INR',
       isFeatured: false,
       isPublished: true,
       displayOrder: (data?.items.length || 0) + 1,
+      imageMediaId: null,
     });
     setError(null);
   }
@@ -134,6 +160,7 @@ export function ServicesManagerPage() {
       isFeatured: service.isFeatured,
       isPublished: service.isPublished,
       displayOrder: service.displayOrder,
+      imageMediaId: service.imageMediaId,
     });
     setError(null);
     setIsModalOpen(true);
@@ -155,6 +182,33 @@ export function ServicesManagerPage() {
       return;
     }
 
+    const price = formData.price;
+    const minPrice = formData.minPrice;
+    const maxPrice = formData.maxPrice;
+    if (formData.priceType === 'fixed' && (price == null || !Number.isFinite(price) || price < 0)) {
+      setError('Enter a valid non-negative fixed price.');
+      return;
+    }
+    if (
+      formData.priceType === 'starting_at' &&
+      (minPrice == null || !Number.isFinite(minPrice) || minPrice < 0)
+    ) {
+      setError('Enter a valid non-negative starting price.');
+      return;
+    }
+    if (
+      formData.priceType === 'range' &&
+      (minPrice == null ||
+        maxPrice == null ||
+        !Number.isFinite(minPrice) ||
+        !Number.isFinite(maxPrice) ||
+        minPrice < 0 ||
+        maxPrice < minPrice)
+    ) {
+      setError('Enter valid minimum and maximum prices; the maximum must be at least the minimum.');
+      return;
+    }
+
     const payload: ServiceInput = {
       name: formData.name.trim(),
       slug: formData.slug?.trim() || slugify(formData.name),
@@ -162,17 +216,17 @@ export function ServicesManagerPage() {
       shortDescription: formData.shortDescription?.trim() || 'Professional dental care',
       description: formData.description?.trim() || formData.shortDescription?.trim() || '',
       priceType: formData.priceType || 'fixed',
-      price: formData.priceType === 'fixed' ? Number(formData.price) : null,
+      price: formData.priceType === 'fixed' ? (price ?? null) : null,
       minPrice:
         formData.priceType === 'starting_at' || formData.priceType === 'range'
-          ? Number(formData.minPrice)
+          ? (minPrice ?? null)
           : null,
-      maxPrice: formData.priceType === 'range' ? Number(formData.maxPrice) : null,
+      maxPrice: formData.priceType === 'range' ? (maxPrice ?? null) : null,
       currency: 'INR',
       isFeatured: !!formData.isFeatured,
       isPublished: formData.isPublished !== false,
       displayOrder: Number(formData.displayOrder) || 1,
-      imageMediaId: null,
+      imageMediaId: formData.imageMediaId ?? null,
       seoTitle: null,
       seoDescription: null,
     };
@@ -403,6 +457,27 @@ export function ServicesManagerPage() {
                 />
               </div>
 
+              <div>
+                <label className="block font-semibold text-stone-700">Service Image</label>
+                <select
+                  value={formData.imageMediaId ?? ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, imageMediaId: e.target.value || null })
+                  }
+                  className="mt-1 w-full rounded-xl border border-stone-300 p-2 focus:border-emerald-700 focus:outline-none"
+                >
+                  <option value="">No image</option>
+                  {(mediaQuery.data?.items ?? []).map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.altText || item.publicId}
+                    </option>
+                  ))}
+                </select>
+                {mediaQuery.isError && (
+                  <p className="mt-1 text-xs text-red-700">Unable to load uploaded images.</p>
+                )}
+              </div>
+
               {/* Pricing in INR */}
               <div className="rounded-xl border border-stone-200 bg-stone-50/50 p-3 space-y-3">
                 <div className="flex items-center justify-between">
@@ -415,18 +490,25 @@ export function ServicesManagerPage() {
                     <label className="block font-medium text-stone-600">Price Structure</label>
                     <select
                       value={formData.priceType}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          priceType: e.target.value as ServiceInput['priceType'],
-                        })
-                      }
+                      onChange={(e) => {
+                        const priceType = e.target.value as ServiceInput['priceType'];
+                        setFormData((previous) => ({
+                          ...previous,
+                          priceType,
+                          price: priceType === 'fixed' ? previous.price : null,
+                          minPrice:
+                            priceType === 'starting_at' || priceType === 'range'
+                              ? previous.minPrice
+                              : null,
+                          maxPrice: priceType === 'range' ? previous.maxPrice : null,
+                        }));
+                      }}
                       className="mt-1 w-full rounded-xl border border-stone-300 p-2 focus:border-emerald-700 focus:outline-none"
                     >
                       <option value="fixed">Fixed Price (₹)</option>
                       <option value="starting_at">Starting At (₹)</option>
                       <option value="range">Price Range (₹ Min – ₹ Max)</option>
-                      <option value="quote">Quote / On Consultation</option>
+                      <option value="quote">Price on request</option>
                     </select>
                   </div>
 
@@ -436,6 +518,8 @@ export function ServicesManagerPage() {
                       <input
                         type="number"
                         min="0"
+                        step="0.01"
+                        required
                         value={formData.price ?? ''}
                         onChange={(e) =>
                           setFormData({
@@ -455,6 +539,8 @@ export function ServicesManagerPage() {
                       <input
                         type="number"
                         min="0"
+                        step="0.01"
+                        required
                         value={formData.minPrice ?? ''}
                         onChange={(e) =>
                           setFormData({
@@ -475,6 +561,8 @@ export function ServicesManagerPage() {
                         <input
                           type="number"
                           min="0"
+                          step="0.01"
+                          required
                           value={formData.minPrice ?? ''}
                           onChange={(e) =>
                             setFormData({
@@ -491,6 +579,8 @@ export function ServicesManagerPage() {
                         <input
                           type="number"
                           min="0"
+                          step="0.01"
+                          required
                           value={formData.maxPrice ?? ''}
                           onChange={(e) =>
                             setFormData({

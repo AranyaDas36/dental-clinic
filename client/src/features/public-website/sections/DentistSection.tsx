@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import type { ClinicInfo } from '@dental/shared';
+import type { PublicMediaItem } from '@/api/public';
 
 interface DentistSectionProps {
   dentist: ClinicInfo['dentist'];
+  media: Record<string, PublicMediaItem>;
   settings: {
     heading: string;
     showQualifications: boolean;
@@ -12,110 +15,87 @@ interface DentistSectionProps {
 
 export function DentistSection({
   dentist,
+  media,
   settings,
   layoutVariant = 'portraitLeft',
 }: DentistSectionProps) {
-  const isRight = layoutVariant === 'portraitRight';
-  const isCompact = layoutVariant === 'compact';
-
-  if (isCompact) {
-    return (
-      <section id="dentist" className="scroll-mt-16 bg-[var(--color-surface)] py-12">
-        <div className="container-page max-w-4xl space-y-4">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-3xl font-bold text-[var(--color-primary)]">
-              {dentist.name.charAt(0) || 'D'}
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-[var(--color-text)]">{dentist.name}</h2>
-              {dentist.title && (
-                <p className="text-sm font-medium text-[var(--color-primary)]">{dentist.title}</p>
-              )}
-              <p className="mt-2 text-sm text-[var(--color-muted-text)]">{dentist.bio}</p>
-            </div>
-          </div>
-        </div>
-      </section>
+  const [portraitLoadFailed, setPortraitLoadFailed] = useState(false);
+  const portrait = dentist.portraitMediaId ? media[dentist.portraitMediaId] : undefined;
+  const portraitElement =
+    portrait?.url && !portraitLoadFailed ? (
+      <img
+        src={portrait.url}
+        alt={portrait.altText || dentist.name}
+        onError={() => setPortraitLoadFailed(true)}
+        className="h-full w-full rounded-[var(--radius-card)] object-cover"
+      />
+    ) : (
+      <div className="flex h-full min-h-64 items-center justify-center rounded-[var(--radius-card)] bg-[var(--color-primary)]/10 text-6xl font-semibold text-[var(--color-primary)]">
+        {dentist.name.charAt(0) || 'D'}
+      </div>
     );
-  }
 
   return (
     <section id="dentist" className="scroll-mt-16 py-[var(--section-space)]">
       <div className="container-page">
         <div
-          className={`grid items-center gap-12 lg:grid-cols-12 ${
-            isRight ? 'lg:[&>*:first-child]:order-2' : ''
+          className={`grid items-center gap-10 lg:grid-cols-12 ${
+            layoutVariant === 'portraitRight' ? 'lg:[&>*:first-child]:order-2' : ''
           }`}
         >
-          {/* Portrait Column */}
           <div className="lg:col-span-5">
-            <div className="relative mx-auto max-w-md">
-              <div className="relative aspect-4/5 overflow-hidden rounded-[var(--radius-card)] border border-black/5 bg-gradient-to-tr from-[var(--color-secondary)] via-[var(--color-primary)] to-[var(--color-accent)] p-1 shadow-[var(--shadow-card)]">
-                <div className="flex h-full w-full flex-col items-center justify-center rounded-[calc(var(--radius-card)-4px)] bg-[var(--color-surface)] p-8 text-center">
-                  <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[var(--color-background)] text-5xl text-[var(--color-secondary)]">
-                    🦷
-                  </div>
-                  <h3 className="mt-6 text-2xl font-bold text-[var(--color-text)]">
-                    {dentist.name}
-                  </h3>
-                  <p className="mt-1 text-sm font-medium text-[var(--color-primary)]">
-                    {dentist.title}
-                  </p>
-                  <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-black/10 bg-[var(--color-background)] px-3 py-1 text-xs text-[var(--color-muted-text)]">
-                    <span>Clinical Lead</span>
-                  </div>
-                </div>
-              </div>
+            <div className="mx-auto aspect-4/5 max-w-md overflow-hidden rounded-[var(--radius-card)] border border-black/5 bg-[var(--color-surface)]">
+              {portraitElement}
             </div>
           </div>
 
-          {/* Biography & Credentials Column */}
           <div className="space-y-6 lg:col-span-7">
             <div>
-              <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--color-primary)]">
-                <span>●</span>
-                <span>Doctor In Charge</span>
-              </div>
-              <h2 className="mt-2 text-3xl leading-tight tracking-tight md:text-5xl">
+              <h2 className="text-3xl leading-tight tracking-tight md:text-5xl">
                 {settings.heading}
               </h2>
+              <h3 className="mt-3 text-xl font-semibold text-[var(--color-text)]">
+                {dentist.name}
+              </h3>
+              {dentist.title && (
+                <p className="mt-1 text-sm font-medium text-[var(--color-primary)]">
+                  {dentist.title}
+                </p>
+              )}
             </div>
 
-            <div className="space-y-4 text-base leading-relaxed text-[var(--color-muted-text)] md:text-lg">
-              <p>{dentist.bio}</p>
-            </div>
+            {dentist.bio.trim() && (
+              <p className="text-base leading-relaxed text-[var(--color-muted-text)]">
+                {dentist.bio}
+              </p>
+            )}
 
-            {/* Specializations */}
             {settings.showSpecializations && dentist.specializations.length > 0 && (
               <div className="space-y-2 border-t border-black/5 pt-4">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text)]">
-                  Clinical Focus Areas
+                  Areas of practice
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {dentist.specializations.map((spec, idx) => (
+                  {dentist.specializations.map((specialty) => (
                     <span
-                      key={idx}
+                      key={specialty}
                       className="rounded-full bg-[var(--color-primary)]/10 px-3.5 py-1 text-xs font-medium text-[var(--color-secondary)]"
                     >
-                      {spec}
+                      {specialty}
                     </span>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Qualifications */}
             {settings.showQualifications && dentist.qualifications.length > 0 && (
               <div className="space-y-2 border-t border-black/5 pt-4">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text)]">
-                  Qualifications & Training
+                  Qualifications
                 </h4>
                 <ul className="space-y-1.5 text-sm text-[var(--color-muted-text)]">
-                  {dentist.qualifications.map((qual, idx) => (
-                    <li key={idx} className="flex items-center gap-2">
-                      <span className="text-[var(--color-primary)]">✓</span>
-                      <span>{qual}</span>
-                    </li>
+                  {dentist.qualifications.map((qualification) => (
+                    <li key={qualification}>{qualification}</li>
                   ))}
                 </ul>
               </div>

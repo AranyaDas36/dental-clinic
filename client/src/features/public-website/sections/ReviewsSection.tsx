@@ -129,7 +129,7 @@ export function ReviewsSection({
                   <p className="text-xs font-semibold text-[var(--color-secondary)]">
                     {review.displayName}
                   </p>
-                  <p className="text-2xs text-[var(--color-muted-text)]">Verified Patient Visit</p>
+                  <p className="text-2xs text-[var(--color-muted-text)]">Approved review</p>
 
                   {/* Clinic response if provided */}
                   {review.adminResponse && (

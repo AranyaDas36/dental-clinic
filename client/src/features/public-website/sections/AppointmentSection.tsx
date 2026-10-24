@@ -15,11 +15,7 @@ interface AppointmentSectionProps {
   preselectedServiceId?: string | null;
 }
 
-const TIME_SLOTS = [
-  'Morning (10:00 – 13:00)',
-  'Afternoon (14:00 – 17:00)',
-  'Evening (17:00 – 19:00)',
-];
+const TIME_SLOTS = ['Morning', 'Afternoon', 'Evening'];
 
 export function AppointmentSection({
   services,

@@ -22,39 +22,59 @@ const DAY_LABELS: Record<string, string> = {
   sunday: 'Sunday',
 };
 
-const DAY_INDEXES: Record<number, string> = {
-  0: 'sunday',
-  1: 'monday',
-  2: 'tuesday',
-  3: 'wednesday',
-  4: 'thursday',
-  5: 'friday',
-  6: 'saturday',
-};
+function formatClinicTime(value: string): string {
+  const [hour, minute] = value.split(':').map(Number);
+  if (!Number.isInteger(hour) || !Number.isInteger(minute)) return value;
+  return new Intl.DateTimeFormat('en-IN', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(2020, 0, 1, hour, minute)));
+}
+
+function toMinutes(value: string): number | null {
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (hour > 23 || minute > 59) return null;
+  return hour * 60 + minute;
+}
 
 export function ContactSection({ clinic, settings }: ContactSectionProps) {
   const currentStatus = useMemo(() => {
-    const now = new Date();
-    const currentDayKey = DAY_INDEXES[now.getDay()];
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Kolkata',
+      weekday: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(new Date());
+    const part = (type: string) => parts.find((item) => item.type === type)?.value ?? '';
+    const currentDayKey = part('weekday').toLowerCase();
     const todayHours = clinic.openingHours.find((h) => h.day.toLowerCase() === currentDayKey);
 
-    if (!todayHours || todayHours.closed || !todayHours.open || !todayHours.close) {
+    if (!todayHours) {
+      return { isOpen: false, text: 'Hours not available today' };
+    }
+    if (todayHours.closed) {
       return { isOpen: false, text: 'Closed today' };
     }
+    if (!todayHours.open || !todayHours.close) {
+      return { isOpen: false, text: 'Hours not available today' };
+    }
 
-    const [openH, openM] = todayHours.open.split(':').map(Number);
-    const [closeH, closeM] = todayHours.close.split(':').map(Number);
-
-    const openTime = new Date(now);
-    openTime.setHours(openH ?? 0, openM ?? 0, 0, 0);
-
-    const closeTime = new Date(now);
-    closeTime.setHours(closeH ?? 0, closeM ?? 0, 0, 0);
-
-    const isOpen = now >= openTime && now <= closeTime;
+    const currentMinutes = Number(part('hour')) * 60 + Number(part('minute'));
+    const openMinutes = toMinutes(todayHours.open);
+    const closeMinutes = toMinutes(todayHours.close);
+    if (openMinutes === null || closeMinutes === null) {
+      return { isOpen: false, text: 'Hours not available today' };
+    }
+    const isOpen = currentMinutes >= openMinutes && currentMinutes < closeMinutes;
     return {
       isOpen,
-      text: isOpen ? `Open now until ${todayHours.close}` : `Closed · Opens at ${todayHours.open}`,
+      text: isOpen ? `Open now · Closes at ${formatClinicTime(todayHours.close)}` : 'Closed now',
     };
   }, [clinic.openingHours]);
 
@@ -64,7 +84,12 @@ export function ContactSection({ clinic, settings }: ContactSectionProps) {
       ? `https://wa.me/${clinic.contact.phone.replace(/[^0-9]/g, '')}`
       : null;
 
-  const currentDayKey = DAY_INDEXES[new Date().getDay()];
+  const currentDayKey = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    weekday: 'long',
+  })
+    .format(new Date())
+    .toLowerCase();
 
   return (
     <section
@@ -150,10 +175,6 @@ export function ContactSection({ clinic, settings }: ContactSectionProps) {
           <div className="space-y-6 lg:col-span-7">
             <div className="rounded-[var(--radius-card)] border border-black/5 bg-[var(--color-background)] p-8 shadow-2xs">
               <h3 className="font-semibold text-[var(--color-text)]">Weekly Clinic Schedule</h3>
-              <p className="mt-1 text-xs text-[var(--color-muted-text)]">
-                Appointments outside regular hours are available upon prior emergency request.
-              </p>
-
               <div className="mt-6 divide-y divide-black/5">
                 {clinic.openingHours.map((schedule) => {
                   const isToday = schedule.day.toLowerCase() === currentDayKey;
@@ -178,7 +199,9 @@ export function ContactSection({ clinic, settings }: ContactSectionProps) {
                       <span>
                         {schedule.closed
                           ? 'Closed'
-                          : `${schedule.open || ''} – ${schedule.close || ''}`}
+                          : schedule.open && schedule.close
+                            ? `${formatClinicTime(schedule.open)} – ${formatClinicTime(schedule.close)}`
+                            : 'Hours not available'}
                       </span>
                     </div>
                   );

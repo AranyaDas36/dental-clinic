@@ -4,14 +4,13 @@ import type { WebsiteSnapshot } from '@dental/shared';
 interface SEOHeadProps {
   seo: WebsiteSnapshot['seo'];
   clinicName: string;
+  socialImageUrl?: string | null;
   isDraftPreview?: boolean;
 }
 
-export function SEOHead({ seo, clinicName, isDraftPreview = false }: SEOHeadProps) {
+export function SEOHead({ seo, clinicName, socialImageUrl, isDraftPreview = false }: SEOHeadProps) {
   useEffect(() => {
-    const fullTitle = seo.title
-      ? `${seo.title} | ${clinicName}`
-      : `${clinicName} — Gentle, Modern Dental Care`;
+    const fullTitle = seo.title || clinicName;
 
     document.title = isDraftPreview ? `[PREVIEW] ${fullTitle}` : fullTitle;
 
@@ -31,6 +30,11 @@ export function SEOHead({ seo, clinicName, isDraftPreview = false }: SEOHeadProp
     setMeta('og:title', fullTitle, true);
     setMeta('og:description', seo.description, true);
     setMeta('og:type', 'website', true);
+    if (socialImageUrl) {
+      setMeta('og:image', socialImageUrl, true);
+    } else {
+      document.querySelector('meta[property="og:image"]')?.remove();
+    }
 
     let canonical = document.querySelector('link[rel="canonical"]');
     if (!canonical) {
@@ -39,7 +43,7 @@ export function SEOHead({ seo, clinicName, isDraftPreview = false }: SEOHeadProp
       document.head.appendChild(canonical);
     }
     canonical.setAttribute('href', window.location.origin + (seo.canonicalPath || '/'));
-  }, [seo, clinicName, isDraftPreview]);
+  }, [seo, clinicName, socialImageUrl, isDraftPreview]);
 
   return null;
 }

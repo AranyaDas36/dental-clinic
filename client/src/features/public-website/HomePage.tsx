@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { DEFAULT_CLINIC, createDefaultWebsiteSnapshot } from '@dental/shared';
 import {
   fetchPublicWebsite,
   fetchPublicServices,
@@ -74,36 +73,29 @@ export function HomePage() {
 
     if (isNotPublished) {
       // Graceful fallback showing clinic launch placeholder
-      const defaultSnapshot = createDefaultWebsiteSnapshot();
       return (
         <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
           <div className="max-w-md space-y-4 rounded-[var(--radius-card)] border border-black/5 bg-[var(--color-surface)] p-8 shadow-[var(--shadow-card)]">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-2xl text-[var(--color-primary)]">
-              🌿
-            </div>
-            <h1 className="text-3xl font-bold text-[var(--color-text)]">{DEFAULT_CLINIC.name}</h1>
+            <h1 className="text-3xl font-bold text-[var(--color-text)]">Website not published</h1>
             <p className="text-sm text-[var(--color-muted-text)]">
-              Our website is currently preparing for public launch. If you need immediate dental
-              assistance, please reach out directly:
+              Clinic information will appear here after the administrator reviews and publishes it.
             </p>
-            <div className="rounded-[var(--radius-button)] bg-[var(--color-background)] p-4 text-xs space-y-1">
-              <p className="font-semibold text-[var(--color-text)]">
-                Phone: {DEFAULT_CLINIC.contact.phone}
-              </p>
-              <p className="text-[var(--color-muted-text)]">
-                Email: {DEFAULT_CLINIC.contact.email}
-              </p>
-            </div>
-            <div className="pt-2">
-              <a
-                href="/admin/login"
-                className="inline-block rounded-[var(--radius-button)] bg-[var(--color-primary)] px-5 py-2 text-xs font-semibold text-white"
-              >
-                Dentist & Admin Sign In →
-              </a>
-            </div>
+            <a
+              href="/admin/login"
+              className="inline-block rounded-[var(--radius-button)] bg-[var(--color-primary)] px-5 py-2 text-xs font-semibold text-white"
+            >
+              Administrator sign in
+            </a>
           </div>
-          <SEOHead seo={defaultSnapshot.seo} clinicName={DEFAULT_CLINIC.name} />
+          <SEOHead
+            seo={{
+              title: 'Website not published',
+              description: 'This clinic website has not been published yet.',
+              canonicalPath: '/',
+              socialImageMediaId: null,
+            }}
+            clinicName="Dental clinic"
+          />
         </main>
       );
     }
@@ -139,10 +131,19 @@ export function HomePage() {
 
   return (
     <>
-      <SEOHead seo={snapshot.seo} clinicName={clinic.name} />
+      <SEOHead
+        seo={snapshot.seo}
+        clinicName={clinic.name}
+        socialImageUrl={
+          snapshot.seo.socialImageMediaId
+            ? websiteQuery.data.media[snapshot.seo.socialImageMediaId]?.url
+            : null
+        }
+      />
       <PublicSectionRenderer
         snapshot={snapshot}
         clinic={clinic}
+        media={websiteQuery.data.media ?? {}}
         services={services}
         reviews={reviews}
         onSelectService={handleSelectService}

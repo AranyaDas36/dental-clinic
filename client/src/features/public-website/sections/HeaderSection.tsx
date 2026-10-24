@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import type { ClinicInfo, NavigationItem } from '@dental/shared';
+import type { PublicMediaItem } from '@/api/public';
 
 interface HeaderSectionProps {
   clinic: ClinicInfo;
+  media: Record<string, PublicMediaItem>;
   navigation: NavigationItem[];
   settings: {
     showLogo: boolean;
@@ -14,11 +16,14 @@ interface HeaderSectionProps {
 
 export function HeaderSection({
   clinic,
+  media,
   navigation,
   settings,
   layoutVariant = 'simple',
 }: HeaderSectionProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false);
+  const logo = clinic.logoMediaId ? media[clinic.logoMediaId] : undefined;
 
   const visibleNav = navigation.filter((item) => item.visible);
   const isCentered = layoutVariant === 'centered';
@@ -31,9 +36,19 @@ export function HeaderSection({
           href="#"
           className="group flex items-center gap-3 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-primary)]/10 text-xl font-bold text-[var(--color-primary)] transition group-hover:scale-105">
-            ✦
-          </div>
+          {settings.showLogo &&
+            (logo?.url && !logoLoadFailed ? (
+              <img
+                src={logo.url}
+                alt={logo.altText || clinic.name}
+                onError={() => setLogoLoadFailed(true)}
+                className="h-10 w-10 rounded-[var(--radius-button)] object-cover"
+              />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-button)] bg-[var(--color-primary)]/10 text-xl font-bold text-[var(--color-primary)] transition group-hover:scale-105">
+                {clinic.name.charAt(0) || 'D'}
+              </div>
+            ))}
           <div>
             <span className="block font-[family-name:var(--font-heading)] text-xl font-semibold leading-tight text-[var(--color-secondary)]">
               {clinic.name}

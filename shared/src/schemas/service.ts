@@ -26,6 +26,13 @@ function refineServicePricing(
           path: ['price'],
         });
       }
+      if (value.minPrice != null || value.maxPrice != null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Fixed pricing cannot include range values',
+          path: ['minPrice'],
+        });
+      }
       break;
     case 'starting_at':
       if (value.minPrice == null) {
@@ -35,8 +42,22 @@ function refineServicePricing(
           path: ['minPrice'],
         });
       }
+      if (value.price != null || value.maxPrice != null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Starting pricing cannot include fixed or maximum prices',
+          path: ['price'],
+        });
+      }
       break;
     case 'range':
+      if (value.price != null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Range pricing cannot include a fixed price',
+          path: ['price'],
+        });
+      }
       if (value.minPrice == null || value.maxPrice == null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -52,6 +73,13 @@ function refineServicePricing(
       }
       break;
     case 'quote':
+      if (value.price != null || value.minPrice != null || value.maxPrice != null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'On-request pricing cannot include numeric prices',
+          path: ['price'],
+        });
+      }
       break;
   }
 }

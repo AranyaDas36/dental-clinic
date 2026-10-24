@@ -1,6 +1,19 @@
 import { useState, useMemo } from 'react';
 import type { PublicServiceItem } from '@/api/public';
 
+function ServiceImage({ service }: { service: PublicServiceItem }) {
+  const [failed, setFailed] = useState(false);
+  if (!service.imageUrl || failed) return null;
+  return (
+    <img
+      src={service.imageUrl}
+      alt={service.imageAltText || service.name}
+      onError={() => setFailed(true)}
+      className="mb-4 aspect-4/3 w-full rounded-[var(--radius-button)] object-cover"
+    />
+  );
+}
+
 interface ServicesSectionProps {
   services: PublicServiceItem[];
   settings: {
@@ -16,20 +29,27 @@ interface ServicesSectionProps {
 export function formatPrice(service: PublicServiceItem): string {
   switch (service.priceType) {
     case 'fixed':
-      return service.price !== null
+      return service.price !== null && Number.isFinite(service.price) && service.price >= 0
         ? `₹${service.price.toLocaleString('en-IN')}`
-        : 'Price on consult';
+        : 'Contact for pricing';
     case 'starting_at':
-      return service.minPrice !== null
+      return service.minPrice !== null && Number.isFinite(service.minPrice) && service.minPrice >= 0
         ? `From ₹${service.minPrice.toLocaleString('en-IN')}`
-        : 'Starting price on consult';
+        : 'Contact for pricing';
     case 'range':
-      if (service.minPrice !== null && service.maxPrice !== null) {
+      if (
+        service.minPrice !== null &&
+        service.maxPrice !== null &&
+        Number.isFinite(service.minPrice) &&
+        Number.isFinite(service.maxPrice) &&
+        service.minPrice >= 0 &&
+        service.maxPrice >= service.minPrice
+      ) {
         return `₹${service.minPrice.toLocaleString('en-IN')} – ₹${service.maxPrice.toLocaleString('en-IN')}`;
       }
-      return 'Price range on consult';
+      return 'Contact for pricing';
     case 'quote':
-      return 'Quote provided after consultation';
+      return 'Contact for pricing';
     default:
       return 'Contact clinic';
   }
@@ -116,6 +136,7 @@ export function ServicesSection({
                 className="flex flex-col justify-between gap-4 p-6 transition hover:bg-white md:flex-row md:items-center"
               >
                 <div className="space-y-1">
+                  <ServiceImage service={service} />
                   <div className="flex items-center gap-2">
                     <span className="rounded-full bg-[var(--color-secondary)]/10 px-2.5 py-0.5 text-xs font-medium text-[var(--color-secondary)]">
                       {service.category}
@@ -138,7 +159,9 @@ export function ServicesSection({
                       <span className="block text-base font-semibold text-[var(--color-primary)]">
                         {formatPrice(service)}
                       </span>
-                      <span className="text-2xs text-[var(--color-muted-text)]">INR</span>
+                      {service.priceType !== 'quote' && (
+                        <span className="text-2xs text-[var(--color-muted-text)]">INR</span>
+                      )}
                     </div>
                   )}
                   <a
@@ -159,6 +182,7 @@ export function ServicesSection({
                 key={service.id}
                 className="flex flex-col justify-between rounded-[var(--radius-card)] border border-black/5 bg-[var(--color-background)] p-7 shadow-2xs transition hover:-translate-y-0.5 hover:shadow-xs"
               >
+                <ServiceImage service={service} />
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="rounded-full bg-[var(--color-secondary)]/10 px-3 py-1 text-xs font-medium text-[var(--color-secondary)]">
@@ -181,7 +205,7 @@ export function ServicesSection({
                     {settings.showPricing ? (
                       <div>
                         <span className="block text-xs uppercase tracking-wider text-[var(--color-muted-text)]">
-                          Transparent Fee
+                          Price
                         </span>
                         <span className="text-lg font-bold text-[var(--color-primary)]">
                           {formatPrice(service)}

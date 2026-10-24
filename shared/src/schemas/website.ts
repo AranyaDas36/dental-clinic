@@ -21,12 +21,46 @@ export const dentistProfileSchema = z.object({
   specializations: z.array(z.string().min(1).max(120)).max(20),
 });
 
-export const openingHoursDaySchema = z.object({
-  day: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
-  closed: z.boolean(),
-  open: z.string().max(16).nullable(),
-  close: z.string().max(16).nullable(),
-});
+export const openingHoursDaySchema = z
+  .object({
+    day: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
+    closed: z.boolean(),
+    open: z.string().max(16).nullable(),
+    close: z.string().max(16).nullable(),
+  })
+  .superRefine((hours, ctx) => {
+    if (hours.closed) return;
+    if (hours.open === null && hours.close === null) return;
+    const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+    if (!hours.open || !timePattern.test(hours.open)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Enter a valid opening time (HH:MM)',
+        path: ['open'],
+      });
+    }
+    if (!hours.close || !timePattern.test(hours.close)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Enter a valid closing time (HH:MM)',
+        path: ['close'],
+      });
+    }
+    if (
+      hours.open &&
+      hours.close &&
+      timePattern.test(hours.open) &&
+      timePattern.test(hours.close)
+    ) {
+      if (hours.close <= hours.open) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Closing time must be after opening time',
+          path: ['close'],
+        });
+      }
+    }
+  });
 
 export const contactInfoSchema = z.object({
   phone: z.string().min(1).max(40),
@@ -40,15 +74,29 @@ export const contactInfoSchema = z.object({
   country: z.string().min(1).max(100),
 });
 
-export const clinicSchema = z.object({
-  name: z.string().min(1).max(160),
-  tagline: z.string().max(240),
-  logoMediaId: objectIdStringSchema.nullable(),
-  faviconMediaId: objectIdStringSchema.nullable(),
-  dentist: dentistProfileSchema,
-  contact: contactInfoSchema,
-  openingHours: z.array(openingHoursDaySchema).length(7),
-});
+export const clinicSchema = z
+  .object({
+    name: z.string().min(1).max(160),
+    tagline: z.string().max(240),
+    logoMediaId: objectIdStringSchema.nullable(),
+    faviconMediaId: objectIdStringSchema.nullable(),
+    dentist: dentistProfileSchema,
+    contact: contactInfoSchema,
+    openingHours: z.array(openingHoursDaySchema).length(7),
+  })
+  .superRefine((clinic, ctx) => {
+    const seen = new Set<string>();
+    clinic.openingHours.forEach((hours, index) => {
+      if (seen.has(hours.day)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Each day must appear only once',
+          path: ['openingHours', index, 'day'],
+        });
+      }
+      seen.add(hours.day);
+    });
+  });
 
 export const footerSchema = z.object({
   aboutText: z.string().max(500),
@@ -91,37 +139,37 @@ export type ClinicInfo = z.infer<typeof clinicSchema>;
 export type NavigationItem = z.infer<typeof navigationItemSchema>;
 
 export const DEFAULT_CLINIC: ClinicInfo = {
-  name: 'Placeholder Dental Clinic',
-  tagline: 'Calm, careful dentistry for your family — demo content',
+  name: 'Clinic name not provided',
+  tagline: '',
   logoMediaId: null,
   faviconMediaId: null,
   dentist: {
-    name: 'Dr. Placeholder Name',
-    title: 'General Dentist (demo)',
-    bio: 'This is placeholder biography text for development. Replace with verified qualifications and experience before publishing.',
+    name: 'Dr. Kalyan Das',
+    title: 'Dentist',
+    bio: '',
     portraitMediaId: null,
-    qualifications: ['[Placeholder] BDS — replace with verified credential'],
-    specializations: ['General dentistry (placeholder)'],
+    qualifications: [],
+    specializations: [],
   },
   contact: {
     phone: '+91 00000 00000',
     email: 'hello@example.com',
     whatsapp: null,
-    addressLine1: '123 Demo Street',
+    addressLine1: 'Lalpur',
     addressLine2: null,
-    city: 'Your City',
-    state: 'Your State',
-    postalCode: '000000',
+    city: 'Chakdah',
+    state: 'West Bengal',
+    postalCode: 'Not provided',
     country: 'India',
   },
   openingHours: [
-    { day: 'monday', closed: false, open: '10:00', close: '19:00' },
-    { day: 'tuesday', closed: false, open: '10:00', close: '19:00' },
-    { day: 'wednesday', closed: false, open: '10:00', close: '19:00' },
-    { day: 'thursday', closed: false, open: '10:00', close: '19:00' },
-    { day: 'friday', closed: false, open: '10:00', close: '19:00' },
-    { day: 'saturday', closed: false, open: '10:00', close: '14:00' },
-    { day: 'sunday', closed: true, open: null, close: null },
+    { day: 'monday', closed: false, open: null, close: null },
+    { day: 'tuesday', closed: false, open: null, close: null },
+    { day: 'wednesday', closed: false, open: null, close: null },
+    { day: 'thursday', closed: false, open: null, close: null },
+    { day: 'friday', closed: false, open: null, close: null },
+    { day: 'saturday', closed: false, open: null, close: null },
+    { day: 'sunday', closed: false, open: null, close: null },
   ],
 };
 
@@ -154,9 +202,8 @@ export function createDefaultWebsiteSnapshot(): WebsiteSnapshot {
         enabled: true,
         layoutVariant: 'split',
         settings: {
-          headline: 'Gentle dental care in a calm clinic setting',
-          subtitle:
-            'Placeholder demo site. Replace this copy, imagery, and credentials before going live.',
+          headline: 'Dental care in Lalpur, Chakdah',
+          subtitle: 'Contact the clinic to confirm current services, availability, and fees.',
           imageMediaId: null,
           primaryCta: { label: 'Request appointment', href: '#appointment' },
           secondaryCta: { label: 'View services', href: '#services' },
@@ -169,11 +216,7 @@ export function createDefaultWebsiteSnapshot(): WebsiteSnapshot {
         layoutVariant: 'row',
         settings: {
           heading: 'Clinic information',
-          items: [
-            { label: 'Hours', detail: 'Mon–Fri 10:00–19:00 (placeholder)' },
-            { label: 'Location', detail: 'Your City, India (placeholder)' },
-            { label: 'Languages', detail: 'Replace with verified info' },
-          ],
+          items: [],
         },
       },
       {
@@ -202,25 +245,12 @@ export function createDefaultWebsiteSnapshot(): WebsiteSnapshot {
       {
         id: 'section-why',
         type: 'whyChooseUs',
-        enabled: true,
+        enabled: false,
         layoutVariant: 'grid',
         settings: {
           heading: 'Why visit us',
-          description: 'Placeholder reasons — edit in the admin dashboard.',
-          items: [
-            {
-              title: 'Calm environment',
-              description: 'Placeholder: describe the clinic atmosphere.',
-            },
-            {
-              title: 'Clear communication',
-              description: 'Placeholder: describe how treatment options are explained.',
-            },
-            {
-              title: 'Family-friendly care',
-              description: 'Placeholder: describe patient focus areas.',
-            },
-          ],
+          description: '',
+          items: [],
         },
       },
       {
@@ -237,7 +267,7 @@ export function createDefaultWebsiteSnapshot(): WebsiteSnapshot {
       {
         id: 'section-gallery',
         type: 'gallery',
-        enabled: true,
+        enabled: false,
         layoutVariant: 'grid',
         settings: {
           heading: 'Clinic gallery',
@@ -277,12 +307,12 @@ export function createDefaultWebsiteSnapshot(): WebsiteSnapshot {
         settings: {
           showPolicies: true,
           showSocial: true,
-          copyrightText: '© Placeholder Dental Clinic — demo content',
+          copyrightText: '',
         },
       },
     ],
     footer: {
-      aboutText: 'Placeholder footer text for the dental clinic website demo.',
+      aboutText: '',
       policyLinks: [
         { label: 'Privacy', href: '/privacy' },
         { label: 'Terms', href: '/terms' },
@@ -290,9 +320,8 @@ export function createDefaultWebsiteSnapshot(): WebsiteSnapshot {
       socialLinks: [],
     },
     seo: {
-      title: 'Placeholder Dental Clinic',
-      description:
-        'Demo dental clinic website. Replace SEO title, description, and social image before publishing.',
+      title: 'Dental clinic in Lalpur, Chakdah',
+      description: 'Contact the clinic to confirm services, fees, and appointment availability.',
       socialImageMediaId: null,
       canonicalPath: '/',
     },

@@ -58,7 +58,7 @@ export function FooterSection({ clinic, footer, settings }: FooterSectionProps) 
           </div>
         </div>
 
-        {/* Demo Warning Banner & Copyright */}
+        {/* Copyright */}
         <div className="border-t border-black/5 pt-6 text-2xs space-y-2">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <p>
@@ -71,10 +71,6 @@ export function FooterSection({ clinic, footer, settings }: FooterSectionProps) 
               </a>
             </div>
           </div>
-          <p className="text-[var(--color-muted-text)] opacity-70">
-            Notice: If this site is configured with demo placeholder text, credentials and services
-            must be verified by the dentist prior to clinical use.
-          </p>
         </div>
       </div>
     </footer>

@@ -1,5 +1,5 @@
 import type { ClinicInfo, WebsiteSnapshot } from '@dental/shared';
-import type { PublicReviewItem, PublicServiceItem } from '@/api/public';
+import type { PublicMediaItem, PublicReviewItem, PublicServiceItem } from '@/api/public';
 import { HeaderSection } from './sections/HeaderSection';
 import { HeroSection } from './sections/HeroSection';
 import { TrustSection } from './sections/TrustSection';
@@ -15,6 +15,7 @@ import { FooterSection } from './sections/FooterSection';
 interface PublicSectionRendererProps {
   snapshot: WebsiteSnapshot;
   clinic: ClinicInfo;
+  media?: Record<string, PublicMediaItem>;
   services: PublicServiceItem[];
   reviews: PublicReviewItem[];
   onSelectService?: (service: PublicServiceItem) => void;
@@ -25,6 +26,7 @@ interface PublicSectionRendererProps {
 export function PublicSectionRenderer({
   snapshot,
   clinic,
+  media = {},
   services,
   reviews,
   onSelectService,
@@ -44,6 +46,7 @@ export function PublicSectionRenderer({
         <HeaderSection
           key={headerSection.id}
           clinic={clinic}
+          media={media}
           navigation={snapshot.navigation}
           settings={headerSection.settings}
           layoutVariant={headerSection.layoutVariant}
@@ -59,6 +62,7 @@ export function PublicSectionRenderer({
                 <HeroSection
                   key={section.id}
                   settings={section.settings}
+                  media={media}
                   layoutVariant={section.layoutVariant}
                 />
               );
@@ -88,6 +92,7 @@ export function PublicSectionRenderer({
                 <DentistSection
                   key={section.id}
                   dentist={clinic.dentist}
+                  media={media}
                   settings={section.settings}
                   layoutVariant={section.layoutVariant}
                 />
@@ -118,6 +123,7 @@ export function PublicSectionRenderer({
                 <GallerySection
                   key={section.id}
                   settings={section.settings}
+                  media={media}
                   layoutVariant={section.layoutVariant}
                 />
               );

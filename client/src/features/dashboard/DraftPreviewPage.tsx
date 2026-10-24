@@ -69,6 +69,8 @@ export function DraftPreviewPage() {
     maxPrice: s.maxPrice,
     currency: s.currency,
     imageMediaId: s.imageMediaId,
+    imageUrl: s.imageUrl,
+    imageAltText: s.imageAltText,
     isFeatured: s.isFeatured,
     isPublished: s.isPublished,
     displayOrder: s.displayOrder,
@@ -99,7 +101,14 @@ export function DraftPreviewPage() {
         </div>
       </div>
 
-      <SEOHead seo={draft.seo} clinicName={clinic.name} />
+      <SEOHead
+        seo={draft.seo}
+        clinicName={clinic.name}
+        socialImageUrl={
+          draft.seo.socialImageMediaId ? data.media[draft.seo.socialImageMediaId]?.url : null
+        }
+        isDraftPreview
+      />
       {/* Meta tags to disallow indexing */}
       <meta name="robots" content="noindex, nofollow" />
 
@@ -107,6 +116,7 @@ export function DraftPreviewPage() {
       <PublicSectionRenderer
         snapshot={draft}
         clinic={clinic}
+        media={data.media}
         services={services}
         reviews={[]}
         onSelectService={() => {}}

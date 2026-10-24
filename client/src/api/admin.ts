@@ -50,6 +50,7 @@ export interface WebsiteDraftData {
   draftVersion: number;
   clinic: ClinicInfo;
   draft: WebsiteSnapshot;
+  media: Record<string, { url: string; altText: string; caption: string }>;
   activeRevisionId: string | null;
   activeRevisionVersion: number | null;
 }
@@ -83,6 +84,8 @@ export interface AdminServiceItem {
   seoTitle: string | null;
   seoDescription: string | null;
   imageMediaId: string | null;
+  imageUrl: string | null;
+  imageAltText: string;
   createdAt: string;
   updatedAt: string;
 }

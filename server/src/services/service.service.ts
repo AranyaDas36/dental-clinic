@@ -5,7 +5,7 @@ import { MediaAssetModel } from '../models/MediaAsset.js';
 import { AppError } from '../middleware/error-handler.js';
 import { invalidatePublicCaches } from './public-cache.js';
 
-function serializeService(doc: {
+type ServiceRecord = {
   _id: { toString(): string };
   name: string;
   slug: string;
@@ -25,7 +25,12 @@ function serializeService(doc: {
   seoDescription?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
-}) {
+};
+
+function serializeService(
+  doc: ServiceRecord,
+  image?: { secureUrl: string; altText?: string } | null,
+) {
   return {
     id: doc._id.toString(),
     name: doc.name,
@@ -39,6 +44,8 @@ function serializeService(doc: {
     maxPrice: doc.maxPrice ?? null,
     currency: doc.currency,
     imageMediaId: doc.imageMediaId ? String(doc.imageMediaId) : null,
+    imageUrl: image?.secureUrl ?? null,
+    imageAltText: image?.altText ?? '',
     isFeatured: doc.isFeatured,
     isPublished: doc.isPublished,
     displayOrder: doc.displayOrder,
@@ -47,6 +54,32 @@ function serializeService(doc: {
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
+}
+
+async function serializePublishedServices(services: ServiceRecord[]) {
+  const mediaIds = [
+    ...new Set(
+      services.flatMap((service) => {
+        const id = service.imageMediaId?.toString();
+        return id && Types.ObjectId.isValid(id) ? [id] : [];
+      }),
+    ),
+  ];
+  const assets = mediaIds.length
+    ? await MediaAssetModel.find({ _id: { $in: mediaIds } })
+        .select('_id secureUrl altText')
+        .lean()
+    : [];
+  const mediaById = new Map(
+    assets.map((asset) => [
+      String(asset._id),
+      { secureUrl: asset.secureUrl, altText: asset.altText },
+    ]),
+  );
+
+  return services.map((service) =>
+    serializeService(service, mediaById.get(service.imageMediaId?.toString() ?? '') ?? null),
+  );
 }
 
 async function assertImageMedia(imageMediaId: string | null) {
@@ -68,7 +101,7 @@ export async function listAdminServices(page: number, pageSize: number) {
       .limit(pageSize),
     ServiceModel.countDocuments(),
   ]);
-  return { items: items.map(serializeService), total };
+  return { items: items.map((item) => serializeService(item)), total };
 }
 
 export async function listPublishedServices(page: number, pageSize: number) {
@@ -80,7 +113,7 @@ export async function listPublishedServices(page: number, pageSize: number) {
       .limit(pageSize),
     ServiceModel.countDocuments(filter),
   ]);
-  return { items: items.map(serializeService), total };
+  return { items: await serializePublishedServices(items), total };
 }
 
 export async function getPublishedServiceBySlug(slug: string) {
@@ -88,7 +121,7 @@ export async function getPublishedServiceBySlug(slug: string) {
   if (!service) {
     throw new AppError(404, 'NOT_FOUND', 'Service not found');
   }
-  return serializeService(service);
+  return (await serializePublishedServices([service]))[0];
 }
 
 export async function getAdminService(id: string) {

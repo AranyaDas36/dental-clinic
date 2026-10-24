@@ -12,7 +12,7 @@ import mongoose from 'mongoose';
 import { WebsiteConfigModel } from '../models/WebsiteConfig.js';
 import { WebsiteRevisionModel } from '../models/WebsiteRevision.js';
 import { AppError } from '../middleware/error-handler.js';
-import { assertMediaIdsExist } from './media-refs.js';
+import { assertMediaIdsExist, resolveReferencedMedia } from './media-refs.js';
 import { getCached, invalidatePublicCaches, setCached } from './public-cache.js';
 
 async function ensureConfig() {
@@ -42,11 +42,37 @@ function serializeSnapshot(snapshot: unknown): WebsiteSnapshot {
   return websiteSnapshotSchema.parse(toPlain(snapshot));
 }
 
+function assertPublishableContent(clinic: ClinicInfo, snapshot: WebsiteSnapshot): void {
+  const content = JSON.stringify({ clinic, snapshot }).toLowerCase();
+  const templateMarkers = [
+    'placeholder',
+    'demo',
+    'your city',
+    'your state',
+    'not provided',
+    'not configured',
+    'example.com',
+    '+91 00000 00000',
+    '000000',
+  ];
+
+  if (templateMarkers.some((marker) => content.includes(marker))) {
+    throw new AppError(
+      422,
+      'CONTENT_NOT_READY',
+      'Replace template details and verify clinic information before publishing.',
+    );
+  }
+}
+
 export async function getDraftWebsite(adminUserId: string) {
   const config = await ensureConfig();
+  const clinic = serializeClinic(config.clinic);
+  const draft = serializeSnapshot(config.draft);
   return {
-    clinic: serializeClinic(config.clinic),
-    draft: serializeSnapshot(config.draft),
+    clinic,
+    draft,
+    media: await resolveReferencedMedia(draft, clinic),
     draftVersion: config.draftVersion,
     activeRevisionId: config.activeRevisionId ? String(config.activeRevisionId) : null,
     updatedAt: config.updatedAt,
@@ -107,8 +133,9 @@ export async function publishWebsite(adminUserId: string, input: WebsitePublishI
     });
   }
 
-  const snapshot = websiteSnapshotSchema.parse(config.draft);
-  const clinic = clinicSchema.parse(config.clinic);
+  const snapshot = serializeSnapshot(config.draft);
+  const clinic = serializeClinic(config.clinic);
+  assertPublishableContent(clinic, snapshot);
   await assertMediaIdsExist(snapshot, clinic);
 
   const latest = await WebsiteRevisionModel.findOne().sort({ version: -1 }).select('version');
@@ -226,9 +253,12 @@ export async function getPublishedWebsite() {
     throw new AppError(404, 'NOT_PUBLISHED', 'Active revision not found');
   }
 
+  const clinic = serializeClinic(revision.clinic);
+  const snapshot = serializeSnapshot(revision.snapshot);
   const payload = {
-    clinic: serializeClinic(revision.clinic),
-    snapshot: serializeSnapshot(revision.snapshot),
+    clinic,
+    snapshot,
+    media: await resolveReferencedMedia(snapshot, clinic),
     version: revision.version,
     publishedAt: revision.publishedAt,
   };
