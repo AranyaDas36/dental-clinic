@@ -172,7 +172,7 @@ describe('Services', () => {
     expect(response.body.data.items).toHaveLength(0);
   });
 
-  it('prevents template services from being published or returned publicly', async () => {
+  it('allows services with template wording to be published and returned publicly', async () => {
     const app = createTestApp();
     const { agent } = await authedAgent(app);
     const csrf = await getCsrf(agent);
@@ -188,22 +188,15 @@ describe('Services', () => {
         description: 'Placeholder content.',
         isPublished: true,
       });
-    expect(response.status).toBe(422);
-    expect(response.body.error.code).toBe('CONTENT_NOT_READY');
+    expect(response.status).toBe(201);
 
-    await ServiceModel.create({
-      ...validService,
-      name: 'Placeholder Check-up',
-      slug: 'placeholder-checkup',
-      shortDescription: 'Demo service',
-      description: 'Placeholder content.',
-      isPublished: true,
-    });
     const publicResponse = await request(app).get('/api/v1/public/services');
     expect(publicResponse.status).toBe(200);
-    expect(publicResponse.body.data.items).toHaveLength(0);
+    expect(publicResponse.body.data.items).toHaveLength(1);
+    expect(publicResponse.body.data.items[0].name).toBe('Placeholder Check-up');
 
     const directResponse = await request(app).get('/api/v1/public/services/placeholder-checkup');
-    expect(directResponse.status).toBe(404);
+    expect(directResponse.status).toBe(200);
+    expect(directResponse.body.data.service.name).toBe('Placeholder Check-up');
   });
 });

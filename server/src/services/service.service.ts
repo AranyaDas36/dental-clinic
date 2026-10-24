@@ -27,25 +27,6 @@ type ServiceRecord = {
   updatedAt?: Date;
 };
 
-const templateMarkerPattern =
-  /placeholder|demo|replace with verified info|not provided|example\.com/i;
-
-function serviceHasTemplateContent(
-  service: Pick<
-    ServiceRecord,
-    'name' | 'slug' | 'shortDescription' | 'description' | 'seoTitle' | 'seoDescription'
-  >,
-): boolean {
-  return [
-    service.name,
-    service.slug,
-    service.shortDescription,
-    service.description,
-    service.seoTitle,
-    service.seoDescription,
-  ].some((value) => typeof value === 'string' && templateMarkerPattern.test(value));
-}
-
 function serializeService(
   doc: ServiceRecord,
   image?: { secureUrl: string; altText?: string } | null,
@@ -124,17 +105,7 @@ export async function listAdminServices(page: number, pageSize: number) {
 }
 
 export async function listPublishedServices(page: number, pageSize: number) {
-  const filter = {
-    isPublished: true,
-    $nor: [
-      { name: templateMarkerPattern },
-      { slug: templateMarkerPattern },
-      { shortDescription: templateMarkerPattern },
-      { description: templateMarkerPattern },
-      { seoTitle: templateMarkerPattern },
-      { seoDescription: templateMarkerPattern },
-    ],
-  };
+  const filter = { isPublished: true };
   const [items, total] = await Promise.all([
     ServiceModel.find(filter)
       .sort({ displayOrder: 1, createdAt: -1 })
@@ -147,7 +118,7 @@ export async function listPublishedServices(page: number, pageSize: number) {
 
 export async function getPublishedServiceBySlug(slug: string) {
   const service = await ServiceModel.findOne({ slug, isPublished: true });
-  if (!service || serviceHasTemplateContent(service)) {
+  if (!service) {
     throw new AppError(404, 'NOT_FOUND', 'Service not found');
   }
   return (await serializePublishedServices([service]))[0];
@@ -166,13 +137,6 @@ export async function getAdminService(id: string) {
 
 export async function createService(input: ServiceInput) {
   const data = serviceInputSchema.parse(input);
-  if (data.isPublished && serviceHasTemplateContent(data)) {
-    throw new AppError(
-      422,
-      'CONTENT_NOT_READY',
-      'Replace template service content before publishing',
-    );
-  }
   await assertImageMedia(data.imageMediaId);
 
   try {
@@ -221,14 +185,6 @@ export async function updateService(id: string, input: ServicePatch) {
     seoDescription:
       input.seoDescription !== undefined ? input.seoDescription : existing.seoDescription,
   });
-
-  if (merged.isPublished && serviceHasTemplateContent(merged)) {
-    throw new AppError(
-      422,
-      'CONTENT_NOT_READY',
-      'Replace template service content before publishing',
-    );
-  }
 
   await assertImageMedia(merged.imageMediaId);
 

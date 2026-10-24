@@ -169,7 +169,7 @@ describe('Website publishing and public isolation', () => {
     expect(publicWebsite.body.data.clinic.openingHours[1].closed).toBe(true);
   });
 
-  it('prevents publishing content that still contains template details', async () => {
+  it('allows administrators to publish content containing template wording', async () => {
     const app = createTestApp();
     const { agent } = await authedAgent(app);
     const initial = await agent.get('/api/v1/admin/website/draft');
@@ -190,12 +190,13 @@ describe('Website publishing and public isolation', () => {
       .post('/api/v1/admin/website/publish')
       .set('x-csrf-token', publishCsrf)
       .send({ expectedDraftVersion: saved.body.data.draftVersion });
-    expect(response.status).toBe(422);
-    expect(response.body.error.code).toBe('CONTENT_NOT_READY');
-    expect(response.body.error.details.fields).toContain('snapshot.sections[1].settings.subtitle');
+    expect(response.status).toBe(200);
+    const publicWebsite = await request(app).get('/api/v1/public/website');
+    expect(publicWebsite.status).toBe(200);
+    expect(publicWebsite.body.data.snapshot.sections[1].settings.subtitle).toContain('Placeholder');
   });
 
-  it('does not serve a previously published revision containing template content', async () => {
+  it('serves previously published revisions containing template wording', async () => {
     const app = createTestApp();
     const { agent, email } = await authedAgent(app);
     const draftResponse = await agent.get('/api/v1/admin/website/draft');
@@ -223,8 +224,8 @@ describe('Website publishing and public isolation', () => {
     invalidatePublicCaches();
 
     const response = await request(app).get('/api/v1/public/website');
-    expect(response.status).toBe(404);
-    expect(response.body.error.code).toBe('NOT_PUBLISHED');
+    expect(response.status).toBe(200);
+    expect(response.body.data.snapshot.sections[1].settings.subtitle).toContain('Placeholder');
     expect(draftResponse.status).toBe(200);
   });
 

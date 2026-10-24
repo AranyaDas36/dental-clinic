@@ -15,20 +15,6 @@ import { AppError } from '../middleware/error-handler.js';
 import { assertMediaIdsExist, resolveReferencedMedia } from './media-refs.js';
 import { getCached, invalidatePublicCaches, setCached } from './public-cache.js';
 
-const TEMPLATE_MARKERS = [
-  'placeholder',
-  'demo',
-  'replace this copy',
-  'replace with verified info',
-  'your city',
-  'your state',
-  'not provided',
-  'not configured',
-  'example.com',
-  '+91 00000 00000',
-  '000000',
-];
-
 async function ensureConfig() {
   let config = await WebsiteConfigModel.findOne({ key: 'primary' });
   if (!config) {
@@ -55,68 +41,6 @@ function serializeClinic(clinic: unknown): ClinicInfo {
 
 function serializeSnapshot(snapshot: unknown): WebsiteSnapshot {
   return websiteSnapshotSchema.parse(toPlain(snapshot));
-}
-
-function findTemplateContentFields(clinic: ClinicInfo, snapshot: WebsiteSnapshot): string[] {
-  const matches = new Set<string>();
-
-  function visit(value: unknown, path: string): void {
-    if (typeof value === 'string') {
-      if (TEMPLATE_MARKERS.some((marker) => value.toLowerCase().includes(marker))) {
-        matches.add(path);
-      }
-      return;
-    }
-    if (Array.isArray(value)) {
-      value.forEach((item, index) => visit(item, `${path}[${index}]`));
-      return;
-    }
-    if (value && typeof value === 'object') {
-      for (const [key, item] of Object.entries(value)) {
-        if (key === 'id' || key === 'postalCode' || key.endsWith('MediaId')) continue;
-        if (
-          key === 'footer' &&
-          !snapshot.sections.some((section) => section.type === 'footer' && section.enabled)
-        ) {
-          continue;
-        }
-        if (key === 'sections' && Array.isArray(item)) {
-          item.forEach((section, index) => {
-            if (
-              section &&
-              typeof section === 'object' &&
-              'enabled' in section &&
-              section.enabled === true
-            ) {
-              visit(section, `${path}.${key}[${index}]`);
-            }
-          });
-          continue;
-        }
-        visit(item, `${path}.${key}`);
-      }
-    }
-  }
-
-  visit(clinic, 'clinic');
-  visit(snapshot, 'snapshot');
-  return [...matches];
-}
-
-function assertPublishableContent(clinic: ClinicInfo, snapshot: WebsiteSnapshot): void {
-  const fields = findTemplateContentFields(clinic, snapshot);
-  if (fields.length > 0) {
-    throw new AppError(
-      422,
-      'CONTENT_NOT_READY',
-      'Replace template details and verify clinic information before publishing.',
-      { fields },
-    );
-  }
-}
-
-function isTemplateContent(clinic: ClinicInfo, snapshot: WebsiteSnapshot): boolean {
-  return findTemplateContentFields(clinic, snapshot).length > 0;
 }
 
 export async function getDraftWebsite(adminUserId: string) {
@@ -189,7 +113,6 @@ export async function publishWebsite(adminUserId: string, input: WebsitePublishI
 
   const snapshot = serializeSnapshot(config.draft);
   const clinic = serializeClinic(config.clinic);
-  assertPublishableContent(clinic, snapshot);
   await assertMediaIdsExist(snapshot, clinic);
 
   const latest = await WebsiteRevisionModel.findOne().sort({ version: -1 }).select('version');
@@ -295,12 +218,7 @@ export async function getPublishedWebsite() {
     version: number;
     publishedAt: Date;
   }>(cacheKey);
-  if (cached) {
-    if (isTemplateContent(cached.clinic, cached.snapshot)) {
-      throw new AppError(404, 'NOT_PUBLISHED', 'Clinic content is not ready to display');
-    }
-    return cached;
-  }
+  if (cached) return cached;
 
   const config = await WebsiteConfigModel.findOne({ key: 'primary' }).lean();
   if (!config?.activeRevisionId) {
@@ -314,9 +232,6 @@ export async function getPublishedWebsite() {
 
   const clinic = serializeClinic(revision.clinic);
   const snapshot = serializeSnapshot(revision.snapshot);
-  if (isTemplateContent(clinic, snapshot)) {
-    throw new AppError(404, 'NOT_PUBLISHED', 'Clinic content is not ready to display');
-  }
   const payload = {
     clinic,
     snapshot,
