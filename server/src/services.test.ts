@@ -4,10 +4,10 @@ import { authedAgent, createTestApp, getCsrf } from './test/helpers.js';
 import { ServiceModel } from './models/Service.js';
 
 const validService = {
-  name: 'Root canal (placeholder)',
-  slug: 'placeholder-root-canal',
-  shortDescription: 'Demo service listing',
-  description: 'Placeholder description for tests',
+  name: 'Root canal treatment',
+  slug: 'root-canal-treatment',
+  shortDescription: 'Root canal treatment information',
+  description: 'Treatment details for patients.',
   category: 'Endodontics',
   priceType: 'fixed' as const,
   price: 8000,
@@ -44,7 +44,7 @@ describe('Services', () => {
     const patched = await agent
       .patch(`/api/v1/admin/services/${id}`)
       .set('x-csrf-token', csrf2)
-      .send({ isPublished: true, name: 'Root canal (placeholder)' });
+      .send({ isPublished: true, name: 'Root canal treatment' });
     expect(patched.status).toBe(200);
     expect(patched.body.data.service.isPublished).toBe(true);
   });
@@ -170,5 +170,40 @@ describe('Services', () => {
     const response = await request(app).get('/api/v1/public/services');
     expect(response.status).toBe(200);
     expect(response.body.data.items).toHaveLength(0);
+  });
+
+  it('prevents template services from being published or returned publicly', async () => {
+    const app = createTestApp();
+    const { agent } = await authedAgent(app);
+    const csrf = await getCsrf(agent);
+
+    const response = await agent
+      .post('/api/v1/admin/services')
+      .set('x-csrf-token', csrf)
+      .send({
+        ...validService,
+        name: 'Placeholder Check-up',
+        slug: 'placeholder-checkup',
+        shortDescription: 'Demo service',
+        description: 'Placeholder content.',
+        isPublished: true,
+      });
+    expect(response.status).toBe(422);
+    expect(response.body.error.code).toBe('CONTENT_NOT_READY');
+
+    await ServiceModel.create({
+      ...validService,
+      name: 'Placeholder Check-up',
+      slug: 'placeholder-checkup',
+      shortDescription: 'Demo service',
+      description: 'Placeholder content.',
+      isPublished: true,
+    });
+    const publicResponse = await request(app).get('/api/v1/public/services');
+    expect(publicResponse.status).toBe(200);
+    expect(publicResponse.body.data.items).toHaveLength(0);
+
+    const directResponse = await request(app).get('/api/v1/public/services/placeholder-checkup');
+    expect(directResponse.status).toBe(404);
   });
 });

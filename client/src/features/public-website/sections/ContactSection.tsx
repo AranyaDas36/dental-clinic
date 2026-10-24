@@ -133,27 +133,33 @@ export function ContactSection({ clinic, settings }: ContactSectionProps) {
                 </p>
               </div>
 
-              <div className="border-t border-black/5 pt-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-muted-text)]">
-                  Direct Inquiries
-                </h3>
-                <p className="mt-2">
-                  <a
-                    href={`tel:${clinic.contact.phone}`}
-                    className="text-base font-semibold text-[var(--color-primary)] hover:underline"
-                  >
-                    📞 {clinic.contact.phone}
-                  </a>
-                </p>
-                <p className="mt-1">
-                  <a
-                    href={`mailto:${clinic.contact.email}`}
-                    className="text-sm text-[var(--color-muted-text)] hover:text-[var(--color-text)]"
-                  >
-                    ✉️ {clinic.contact.email}
-                  </a>
-                </p>
-              </div>
+              {(clinic.contact.phone || clinic.contact.email) && (
+                <div className="border-t border-black/5 pt-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-muted-text)]">
+                    Direct Inquiries
+                  </h3>
+                  {clinic.contact.phone && (
+                    <p className="mt-2">
+                      <a
+                        href={`tel:${clinic.contact.phone}`}
+                        className="text-base font-semibold text-[var(--color-primary)] hover:underline"
+                      >
+                        📞 {clinic.contact.phone}
+                      </a>
+                    </p>
+                  )}
+                  {clinic.contact.email && (
+                    <p className="mt-1">
+                      <a
+                        href={`mailto:${clinic.contact.email}`}
+                        className="text-sm text-[var(--color-muted-text)] hover:text-[var(--color-text)]"
+                      >
+                        ✉️ {clinic.contact.email}
+                      </a>
+                    </p>
+                  )}
+                </div>
+              )}
 
               {settings.showWhatsApp && whatsappHref && (
                 <div className="border-t border-black/5 pt-4">

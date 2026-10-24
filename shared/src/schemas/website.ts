@@ -63,14 +63,14 @@ export const openingHoursDaySchema = z
   });
 
 export const contactInfoSchema = z.object({
-  phone: z.string().min(1).max(40),
-  email: z.string().email().max(254),
+  phone: z.string().max(40),
+  email: z.union([z.literal(''), z.string().email().max(254)]),
   whatsapp: z.string().max(40).nullable(),
   addressLine1: z.string().min(1).max(200),
   addressLine2: z.string().max(200).nullable(),
   city: z.string().min(1).max(100),
   state: z.string().min(1).max(100),
-  postalCode: z.string().min(1).max(20),
+  postalCode: z.string().max(20),
   country: z.string().min(1).max(100),
 });
 
@@ -139,7 +139,7 @@ export type ClinicInfo = z.infer<typeof clinicSchema>;
 export type NavigationItem = z.infer<typeof navigationItemSchema>;
 
 export const DEFAULT_CLINIC: ClinicInfo = {
-  name: 'Clinic name not provided',
+  name: 'Chakdaha Dental Clinic',
   tagline: '',
   logoMediaId: null,
   faviconMediaId: null,
@@ -152,24 +152,24 @@ export const DEFAULT_CLINIC: ClinicInfo = {
     specializations: [],
   },
   contact: {
-    phone: '+91 00000 00000',
-    email: 'hello@example.com',
+    phone: '',
+    email: '',
     whatsapp: null,
     addressLine1: 'Lalpur',
     addressLine2: null,
     city: 'Chakdah',
     state: 'West Bengal',
-    postalCode: 'Not provided',
+    postalCode: '',
     country: 'India',
   },
   openingHours: [
-    { day: 'monday', closed: false, open: null, close: null },
-    { day: 'tuesday', closed: false, open: null, close: null },
-    { day: 'wednesday', closed: false, open: null, close: null },
-    { day: 'thursday', closed: false, open: null, close: null },
-    { day: 'friday', closed: false, open: null, close: null },
-    { day: 'saturday', closed: false, open: null, close: null },
-    { day: 'sunday', closed: false, open: null, close: null },
+    { day: 'monday', closed: false, open: '10:00', close: '13:00' },
+    { day: 'tuesday', closed: true, open: null, close: null },
+    { day: 'wednesday', closed: false, open: '10:00', close: '13:00' },
+    { day: 'thursday', closed: false, open: '10:00', close: '13:00' },
+    { day: 'friday', closed: false, open: '10:00', close: '13:00' },
+    { day: 'saturday', closed: false, open: '10:00', close: '13:00' },
+    { day: 'sunday', closed: false, open: '10:00', close: '13:00' },
   ],
 };
 
@@ -202,7 +202,7 @@ export function createDefaultWebsiteSnapshot(): WebsiteSnapshot {
         enabled: true,
         layoutVariant: 'split',
         settings: {
-          headline: 'Dental care in Lalpur, Chakdah',
+          headline: 'Dental care with Dr. Kalyan Das in Lalpur, Chakdah',
           subtitle: 'Contact the clinic to confirm current services, availability, and fees.',
           imageMediaId: null,
           primaryCta: { label: 'Request appointment', href: '#appointment' },
@@ -226,7 +226,8 @@ export function createDefaultWebsiteSnapshot(): WebsiteSnapshot {
         layoutVariant: 'cards',
         settings: {
           heading: 'Services & pricing',
-          description: 'Published services appear here. Prices are managed in the admin dashboard.',
+          description:
+            'Services listed for the clinic include tooth reshaping and laser dentistry. Contact the clinic to confirm fees and availability.',
           showPricing: true,
           featuredOnly: false,
         },
@@ -320,7 +321,7 @@ export function createDefaultWebsiteSnapshot(): WebsiteSnapshot {
       socialLinks: [],
     },
     seo: {
-      title: 'Dental clinic in Lalpur, Chakdah',
+      title: 'Chakdaha Dental Clinic | Lalpur, Chakdah',
       description: 'Contact the clinic to confirm services, fees, and appointment availability.',
       socialImageMediaId: null,
       canonicalPath: '/',

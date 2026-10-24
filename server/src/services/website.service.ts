@@ -15,6 +15,20 @@ import { AppError } from '../middleware/error-handler.js';
 import { assertMediaIdsExist, resolveReferencedMedia } from './media-refs.js';
 import { getCached, invalidatePublicCaches, setCached } from './public-cache.js';
 
+const TEMPLATE_MARKERS = [
+  'placeholder',
+  'demo',
+  'replace this copy',
+  'replace with verified info',
+  'your city',
+  'your state',
+  'not provided',
+  'not configured',
+  'example.com',
+  '+91 00000 00000',
+  '000000',
+];
+
 async function ensureConfig() {
   let config = await WebsiteConfigModel.findOne({ key: 'primary' });
   if (!config) {
@@ -27,6 +41,7 @@ async function ensureConfig() {
       updatedBy: null,
     });
   }
+
   return config;
 }
 
@@ -44,25 +59,18 @@ function serializeSnapshot(snapshot: unknown): WebsiteSnapshot {
 
 function assertPublishableContent(clinic: ClinicInfo, snapshot: WebsiteSnapshot): void {
   const content = JSON.stringify({ clinic, snapshot }).toLowerCase();
-  const templateMarkers = [
-    'placeholder',
-    'demo',
-    'your city',
-    'your state',
-    'not provided',
-    'not configured',
-    'example.com',
-    '+91 00000 00000',
-    '000000',
-  ];
-
-  if (templateMarkers.some((marker) => content.includes(marker))) {
+  if (TEMPLATE_MARKERS.some((marker) => content.includes(marker))) {
     throw new AppError(
       422,
       'CONTENT_NOT_READY',
       'Replace template details and verify clinic information before publishing.',
     );
   }
+}
+
+function isTemplateContent(clinic: ClinicInfo, snapshot: WebsiteSnapshot): boolean {
+  const content = JSON.stringify({ clinic, snapshot }).toLowerCase();
+  return TEMPLATE_MARKERS.some((marker) => content.includes(marker));
 }
 
 export async function getDraftWebsite(adminUserId: string) {
@@ -241,7 +249,12 @@ export async function getPublishedWebsite() {
     version: number;
     publishedAt: Date;
   }>(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    if (isTemplateContent(cached.clinic, cached.snapshot)) {
+      throw new AppError(404, 'NOT_PUBLISHED', 'Clinic content is not ready to display');
+    }
+    return cached;
+  }
 
   const config = await WebsiteConfigModel.findOne({ key: 'primary' }).lean();
   if (!config?.activeRevisionId) {
@@ -255,6 +268,9 @@ export async function getPublishedWebsite() {
 
   const clinic = serializeClinic(revision.clinic);
   const snapshot = serializeSnapshot(revision.snapshot);
+  if (isTemplateContent(clinic, snapshot)) {
+    throw new AppError(404, 'NOT_PUBLISHED', 'Clinic content is not ready to display');
+  }
   const payload = {
     clinic,
     snapshot,

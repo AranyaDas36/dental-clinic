@@ -6,6 +6,9 @@ import { WebsiteConfigModel } from './models/WebsiteConfig.js';
 import { ReviewModel } from './models/Review.js';
 import { AppointmentRequestModel } from './models/AppointmentRequest.js';
 import { ServiceModel } from './models/Service.js';
+import { WebsiteRevisionModel } from './models/WebsiteRevision.js';
+import { AdminUserModel } from './models/AdminUser.js';
+import { invalidatePublicCaches } from './services/public-cache.js';
 
 function publishableTestClinic() {
   return {
@@ -21,6 +24,38 @@ function publishableTestClinic() {
 }
 
 describe('Website publishing and public isolation', () => {
+  it('uses the screenshot details without inventing contact information', async () => {
+    const app = createTestApp();
+    const { agent } = await authedAgent(app);
+
+    const response = await agent.get('/api/v1/admin/website/draft');
+    expect(response.status).toBe(200);
+    expect(response.body.data.clinic.name).toBe('Chakdaha Dental Clinic');
+    expect(response.body.data.clinic.dentist.name).toBe('Dr. Kalyan Das');
+    expect(response.body.data.clinic.contact).toMatchObject({
+      addressLine1: 'Lalpur',
+      city: 'Chakdah',
+      state: 'West Bengal',
+      phone: '',
+      email: '',
+      postalCode: '',
+    });
+    expect(response.body.data.clinic.openingHours).toEqual([
+      { day: 'monday', closed: false, open: '10:00', close: '13:00' },
+      { day: 'tuesday', closed: true, open: null, close: null },
+      { day: 'wednesday', closed: false, open: '10:00', close: '13:00' },
+      { day: 'thursday', closed: false, open: '10:00', close: '13:00' },
+      { day: 'friday', closed: false, open: '10:00', close: '13:00' },
+      { day: 'saturday', closed: false, open: '10:00', close: '13:00' },
+      { day: 'sunday', closed: false, open: '10:00', close: '13:00' },
+    ]);
+    const servicesSection = response.body.data.draft.sections.find(
+      (section: { type: string }) => section.type === 'services',
+    );
+    expect(servicesSection.settings.description).toContain('tooth reshaping');
+    expect(servicesSection.settings.description).toContain('laser dentistry');
+  });
+
   it('keeps drafts private until publish', async () => {
     const app = createTestApp();
     const { agent } = await authedAgent(app);
@@ -111,17 +146,62 @@ describe('Website publishing and public isolation', () => {
     expect(publicWebsite.body.data.clinic.openingHours[1].closed).toBe(true);
   });
 
-  it('prevents publishing the untouched template details', async () => {
+  it('prevents publishing content that still contains template details', async () => {
     const app = createTestApp();
     const { agent } = await authedAgent(app);
-    const draft = await agent.get('/api/v1/admin/website/draft');
+    const initial = await agent.get('/api/v1/admin/website/draft');
     const csrf = await getCsrf(agent);
+    const draft = createDefaultWebsiteSnapshot();
+    const hero = draft.sections.find((section) => section.type === 'hero');
+    if (!hero || hero.type !== 'hero') throw new Error('Default hero section is missing');
+    hero.settings.subtitle = 'Placeholder demo site. Replace this copy before going live.';
+    const saved = await agent.put('/api/v1/admin/website/draft').set('x-csrf-token', csrf).send({
+      expectedDraftVersion: initial.body.data.draftVersion,
+      clinic: publishableTestClinic(),
+      draft,
+    });
+    expect(saved.status).toBe(200);
+
+    const publishCsrf = await getCsrf(agent);
     const response = await agent
       .post('/api/v1/admin/website/publish')
-      .set('x-csrf-token', csrf)
-      .send({ expectedDraftVersion: draft.body.data.draftVersion });
+      .set('x-csrf-token', publishCsrf)
+      .send({ expectedDraftVersion: saved.body.data.draftVersion });
     expect(response.status).toBe(422);
     expect(response.body.error.code).toBe('CONTENT_NOT_READY');
+  });
+
+  it('does not serve a previously published revision containing template content', async () => {
+    const app = createTestApp();
+    const { agent, email } = await authedAgent(app);
+    const draftResponse = await agent.get('/api/v1/admin/website/draft');
+    const admin = await AdminUserModel.findOne({ email });
+    if (!admin) throw new Error('Test administrator was not created');
+
+    const snapshot = createDefaultWebsiteSnapshot();
+    const hero = snapshot.sections.find((section) => section.type === 'hero');
+    if (!hero || hero.type !== 'hero') throw new Error('Default hero section is missing');
+    hero.settings.subtitle = 'Placeholder demo site. Replace this copy before going live.';
+
+    const revision = await WebsiteRevisionModel.create({
+      version: 1,
+      schemaVersion: snapshot.schemaVersion,
+      snapshot,
+      clinic: publishableTestClinic(),
+      publishedBy: admin._id,
+      publishedAt: new Date(),
+      changeSummary: 'Legacy template revision',
+    });
+    await WebsiteConfigModel.updateOne(
+      { key: 'primary' },
+      { $set: { activeRevisionId: revision._id } },
+    );
+    invalidatePublicCaches();
+
+    const response = await request(app).get('/api/v1/public/website');
+    expect(response.status).toBe(404);
+    expect(response.body.error.code).toBe('NOT_PUBLISHED');
+    expect(draftResponse.status).toBe(200);
   });
 
   it('returns 409 on concurrent draft edits', async () => {

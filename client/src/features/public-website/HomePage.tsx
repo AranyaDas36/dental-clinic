@@ -72,20 +72,14 @@ export function HomePage() {
     const isNotPublished = (websiteQuery.error as { status?: number })?.status === 404;
 
     if (isNotPublished) {
-      // Graceful fallback showing clinic launch placeholder
+      // Keep unpublished or unverified clinic content out of the public page.
       return (
         <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
           <div className="max-w-md space-y-4 rounded-[var(--radius-card)] border border-black/5 bg-[var(--color-surface)] p-8 shadow-[var(--shadow-card)]">
             <h1 className="text-3xl font-bold text-[var(--color-text)]">Website not published</h1>
             <p className="text-sm text-[var(--color-muted-text)]">
-              Clinic information will appear here after the administrator reviews and publishes it.
+              This clinic website is being updated. Please check back soon.
             </p>
-            <a
-              href="/admin/login"
-              className="inline-block rounded-[var(--radius-button)] bg-[var(--color-primary)] px-5 py-2 text-xs font-semibold text-white"
-            >
-              Administrator sign in
-            </a>
           </div>
           <SEOHead
             seo={{

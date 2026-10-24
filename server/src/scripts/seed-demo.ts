@@ -18,7 +18,10 @@ import { AdminUserModel } from '../models/AdminUser.js';
 import { logger } from '../utils/logger.js';
 
 async function main() {
-  loadEnvForBoot();
+  const env = loadEnvForBoot();
+  if (env.NODE_ENV === 'production') {
+    throw new Error('Demo seeding is disabled in production');
+  }
   await connectDatabase();
 
   const admin = await AdminUserModel.findOne({ isActive: true });
