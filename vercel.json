@@ -5,7 +5,11 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/:path((?!(googleae63f1651eb7f5b4\\.html|robots\\.txt|sitemap\\.xml)$).*)",
+      "source": "/admin/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin",
       "destination": "/index.html"
     }
   ]
