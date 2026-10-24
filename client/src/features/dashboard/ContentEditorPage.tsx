@@ -23,9 +23,13 @@ export function ContentEditorPage() {
   });
 
   const mediaItems = mediaQuery.data?.items ?? [];
-  const selectedDentistPortrait = mediaItems.find(
-    (item) => item.id === clinic?.dentist.portraitMediaId,
+  const selectedDentistPortrait = clinic?.dentist.portraitMediaId;
+  const selectedDentistPortraitMedia = mediaItems.find(
+    (item) => item.id === selectedDentistPortrait,
   );
+  const selectedDentistPortraitUrl =
+    selectedDentistPortraitMedia?.secureUrl ??
+    (selectedDentistPortrait ? data?.media[selectedDentistPortrait]?.url : undefined);
 
   useEffect(() => {
     if (data) {
@@ -165,6 +169,25 @@ export function ContentEditorPage() {
     (section): section is Extract<WebsiteSection, { type: 'gallery' }> =>
       section.type === 'gallery',
   );
+  const galleryPortraitChoices = (gallerySection?.settings.mediaIds ?? []).flatMap((id) => {
+    const item = mediaItems.find((mediaItem) => mediaItem.id === id);
+    const resolved = data?.media[id];
+    const url = item?.secureUrl ?? resolved?.url;
+    if (!url) return [];
+
+    return [
+      {
+        id,
+        url,
+        label:
+          item?.altText ||
+          resolved?.altText ||
+          item?.caption ||
+          resolved?.caption ||
+          'Clinic gallery photo',
+      },
+    ];
+  });
 
   return (
     <div className="space-y-6">
@@ -526,12 +549,49 @@ export function ContentEditorPage() {
                   </button>
                 </div>
               )}
-              {selectedDentistPortrait && (
+              {selectedDentistPortraitUrl && (
                 <img
-                  src={selectedDentistPortrait.secureUrl}
-                  alt="Selected dentist portrait preview"
+                  src={selectedDentistPortraitUrl}
+                  alt={
+                    selectedDentistPortraitMedia?.altText ||
+                    data?.media[selectedDentistPortrait ?? '']?.altText ||
+                    'Selected dentist portrait preview'
+                  }
                   className="mt-3 h-32 w-24 rounded-lg border border-stone-200 object-cover"
                 />
+              )}
+              {galleryPortraitChoices.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-xs font-semibold text-stone-700">
+                    Use a photo already in Clinic Gallery
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {galleryPortraitChoices.map((photo) => (
+                      <div
+                        key={photo.id}
+                        className="flex items-center gap-3 rounded-lg border border-stone-200 p-2"
+                      >
+                        <img src={photo.url} alt="" className="h-12 w-14 rounded object-cover" />
+                        <span className="min-w-0 flex-1 truncate text-xs text-stone-700">
+                          {photo.label}
+                        </span>
+                        <button
+                          type="button"
+                          aria-pressed={selectedDentistPortrait === photo.id}
+                          onClick={() =>
+                            setClinic({
+                              ...clinic,
+                              dentist: { ...clinic.dentist, portraitMediaId: photo.id },
+                            })
+                          }
+                          className="shrink-0 rounded-lg border border-emerald-800 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-50"
+                        >
+                          {selectedDentistPortrait === photo.id ? 'Selected' : 'Use portrait'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
 

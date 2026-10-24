@@ -34,6 +34,11 @@ export function PublicSectionRenderer({
 }: PublicSectionRendererProps) {
   const headerSection = snapshot.sections.find((s) => s.type === 'header');
   const footerSection = snapshot.sections.find((s) => s.type === 'footer');
+  const galleryPortraitId = snapshot.sections.find(
+    (section) => section.type === 'gallery' && section.enabled,
+  );
+  const firstGalleryPortraitId =
+    galleryPortraitId?.type === 'gallery' ? galleryPortraitId.settings.mediaIds[0] : undefined;
   const bodySections = snapshot.sections.filter(
     (s) => s.type !== 'header' && s.type !== 'footer' && s.type !== 'trust' && s.enabled,
   );
@@ -81,7 +86,11 @@ export function PublicSectionRenderer({
               return (
                 <DentistSection
                   key={section.id}
-                  dentist={clinic.dentist}
+                  dentist={{
+                    ...clinic.dentist,
+                    portraitMediaId:
+                      clinic.dentist.portraitMediaId ?? firstGalleryPortraitId ?? null,
+                  }}
                   media={media}
                   settings={section.settings}
                   layoutVariant={section.layoutVariant}
