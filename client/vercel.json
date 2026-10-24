@@ -1,5 +1,8 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/:path((?!googleae63f1651eb7f5b4\\.html$).*)",
+      "destination": "/index.html"
+    }
   ]
 }

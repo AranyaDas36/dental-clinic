@@ -3,5 +3,10 @@
   "outputDirectory": "client/dist",
   "installCommand": "pnpm install --frozen-lockfile",
   "framework": "vite",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/:path((?!googleae63f1651eb7f5b4\\.html$).*)",
+      "destination": "/index.html"
+    }
+  ]
 }
