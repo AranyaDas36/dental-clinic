@@ -73,7 +73,13 @@ function findTemplateContentFields(clinic: ClinicInfo, snapshot: WebsiteSnapshot
     }
     if (value && typeof value === 'object') {
       for (const [key, item] of Object.entries(value)) {
-        if (key === 'id' || key.endsWith('MediaId')) continue;
+        if (key === 'id' || key === 'postalCode' || key.endsWith('MediaId')) continue;
+        if (
+          key === 'footer' &&
+          !snapshot.sections.some((section) => section.type === 'footer' && section.enabled)
+        ) {
+          continue;
+        }
         if (key === 'sections' && Array.isArray(item)) {
           item.forEach((section, index) => {
             if (
@@ -110,8 +116,7 @@ function assertPublishableContent(clinic: ClinicInfo, snapshot: WebsiteSnapshot)
 }
 
 function isTemplateContent(clinic: ClinicInfo, snapshot: WebsiteSnapshot): boolean {
-  const content = JSON.stringify({ clinic, snapshot }).toLowerCase();
-  return TEMPLATE_MARKERS.some((marker) => content.includes(marker));
+  return findTemplateContentFields(clinic, snapshot).length > 0;
 }
 
 export async function getDraftWebsite(adminUserId: string) {

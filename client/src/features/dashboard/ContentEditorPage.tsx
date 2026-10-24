@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchAdminMedia, fetchWebsiteDraft, updateWebsiteDraft } from '@/api/admin';
-import type { ClinicInfo, WebsiteSection } from '@dental/shared';
+import type { ClinicInfo, WebsiteSection, WebsiteSnapshot } from '@dental/shared';
 
 export function ContentEditorPage() {
   const queryClient = useQueryClient();
   const [clinic, setClinic] = useState<ClinicInfo | null>(null);
   const [sections, setSections] = useState<WebsiteSection[]>([]);
+  const [seo, setSeo] = useState<WebsiteSnapshot['seo'] | null>(null);
+  const [footer, setFooter] = useState<WebsiteSnapshot['footer'] | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'clinic' | 'dentist' | 'sections'>('clinic');
 
@@ -26,18 +28,22 @@ export function ContentEditorPage() {
     if (data) {
       setClinic(data.clinic);
       setSections([...data.draft.sections]);
+      setSeo(data.draft.seo);
+      setFooter(data.draft.footer);
     }
   }, [data]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!data || !clinic) return;
+      if (!data || !clinic || !seo || !footer) return;
       return updateWebsiteDraft({
         expectedDraftVersion: data.draftVersion,
         clinic,
         draft: {
           ...data.draft,
           sections,
+          seo,
+          footer,
         },
       });
     },
@@ -116,6 +122,17 @@ export function ContentEditorPage() {
         section.type === 'hero'
           ? { ...section, settings: { ...section.settings, [field]: value } }
           : section,
+      ),
+    );
+  }
+
+  function updateSectionSettings<T extends WebsiteSection['type']>(
+    type: T,
+    update: (section: Extract<WebsiteSection, { type: T }>) => Extract<WebsiteSection, { type: T }>,
+  ) {
+    setSections((previous) =>
+      previous.map((section) =>
+        section.type === type ? update(section as Extract<WebsiteSection, { type: T }>) : section,
       ),
     );
   }
@@ -329,6 +346,23 @@ export function ContentEditorPage() {
                   })
                 }
                 className="mt-1 w-full rounded-xl border border-stone-300 p-2.5 text-xs focus:border-emerald-700 focus:outline-none focus:ring-1 focus:ring-emerald-700"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-stone-700">
+                Postal Code (optional)
+              </label>
+              <input
+                type="text"
+                value={clinic.contact.postalCode}
+                onChange={(e) =>
+                  setClinic({
+                    ...clinic,
+                    contact: { ...clinic.contact, postalCode: e.target.value },
+                  })
+                }
+                className="mt-1 w-full rounded-xl border border-stone-300 p-2.5 text-xs"
               />
             </div>
 
@@ -644,6 +678,226 @@ export function ContentEditorPage() {
                   </option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {sections.map((section) => {
+            if (section.type === 'trust') {
+              return (
+                <div key={section.id} className="space-y-3 border-t border-stone-100 pt-4">
+                  <h3 className="text-xs font-semibold text-stone-700">Clinic Highlights</h3>
+                  <label className="block text-xs text-stone-600">
+                    Section heading
+                    <input
+                      value={section.settings.heading}
+                      onChange={(e) =>
+                        updateSectionSettings('trust', (current) => ({
+                          ...current,
+                          settings: { ...current.settings, heading: e.target.value },
+                        }))
+                      }
+                      className="mt-1 w-full rounded-xl border border-stone-300 p-2.5 text-xs"
+                    />
+                  </label>
+                  {section.settings.items.map((item, index) => (
+                    <div key={`${section.id}-${index}`} className="grid gap-2 sm:grid-cols-2">
+                      <input
+                        aria-label={`Highlight ${index + 1} label`}
+                        value={item.label}
+                        onChange={(e) =>
+                          updateSectionSettings('trust', (current) => ({
+                            ...current,
+                            settings: {
+                              ...current.settings,
+                              items: current.settings.items.map((entry, itemIndex) =>
+                                itemIndex === index ? { ...entry, label: e.target.value } : entry,
+                              ),
+                            },
+                          }))
+                        }
+                        className="rounded-xl border border-stone-300 p-2.5 text-xs"
+                      />
+                      <div className="flex gap-2">
+                        <input
+                          aria-label={`Highlight ${index + 1} detail`}
+                          value={item.detail}
+                          onChange={(e) =>
+                            updateSectionSettings('trust', (current) => ({
+                              ...current,
+                              settings: {
+                                ...current.settings,
+                                items: current.settings.items.map((entry, itemIndex) =>
+                                  itemIndex === index
+                                    ? { ...entry, detail: e.target.value }
+                                    : entry,
+                                ),
+                              },
+                            }))
+                          }
+                          className="min-w-0 flex-1 rounded-xl border border-stone-300 p-2.5 text-xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateSectionSettings('trust', (current) => ({
+                              ...current,
+                              settings: {
+                                ...current.settings,
+                                items: current.settings.items.filter(
+                                  (_entry, itemIndex) => itemIndex !== index,
+                                ),
+                              },
+                            }))
+                          }
+                          className="rounded-lg border border-stone-200 px-3 text-xs text-stone-600"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+
+            if (section.type === 'whyChooseUs') {
+              return (
+                <div key={section.id} className="space-y-3 border-t border-stone-100 pt-4">
+                  <h3 className="text-xs font-semibold text-stone-700">Why Choose Us Content</h3>
+                  <label className="block text-xs text-stone-600">
+                    Section description
+                    <textarea
+                      rows={2}
+                      value={section.settings.description}
+                      onChange={(e) =>
+                        updateSectionSettings('whyChooseUs', (current) => ({
+                          ...current,
+                          settings: { ...current.settings, description: e.target.value },
+                        }))
+                      }
+                      className="mt-1 w-full rounded-xl border border-stone-300 p-2.5 text-xs"
+                    />
+                  </label>
+                  {section.settings.items.map((item, index) => (
+                    <div
+                      key={`${section.id}-${index}`}
+                      className="space-y-2 rounded-xl border border-stone-200 p-3"
+                    >
+                      <input
+                        aria-label={`Reason ${index + 1} title`}
+                        value={item.title}
+                        onChange={(e) =>
+                          updateSectionSettings('whyChooseUs', (current) => ({
+                            ...current,
+                            settings: {
+                              ...current.settings,
+                              items: current.settings.items.map((entry, itemIndex) =>
+                                itemIndex === index ? { ...entry, title: e.target.value } : entry,
+                              ),
+                            },
+                          }))
+                        }
+                        className="w-full rounded-xl border border-stone-300 p-2.5 text-xs"
+                      />
+                      <textarea
+                        aria-label={`Reason ${index + 1} description`}
+                        rows={2}
+                        value={item.description}
+                        onChange={(e) =>
+                          updateSectionSettings('whyChooseUs', (current) => ({
+                            ...current,
+                            settings: {
+                              ...current.settings,
+                              items: current.settings.items.map((entry, itemIndex) =>
+                                itemIndex === index
+                                  ? { ...entry, description: e.target.value }
+                                  : entry,
+                              ),
+                            },
+                          }))
+                        }
+                        className="w-full rounded-xl border border-stone-300 p-2.5 text-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateSectionSettings('whyChooseUs', (current) => ({
+                            ...current,
+                            settings: {
+                              ...current.settings,
+                              items: current.settings.items.filter(
+                                (_entry, itemIndex) => itemIndex !== index,
+                              ),
+                            },
+                          }))
+                        }
+                        className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs text-stone-600"
+                      >
+                        Remove this reason
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+
+            return null;
+          })}
+
+          {footer && seo && (
+            <div className="grid gap-5 border-t border-stone-100 pt-4 lg:grid-cols-2">
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold text-stone-700">Footer Content</h3>
+                <label className="block text-xs text-stone-600">
+                  About the clinic (optional)
+                  <textarea
+                    rows={3}
+                    maxLength={500}
+                    value={footer.aboutText}
+                    onChange={(e) => setFooter({ ...footer, aboutText: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-stone-300 p-2.5 text-xs"
+                  />
+                </label>
+                <label className="block text-xs text-stone-600">
+                  Copyright text (optional)
+                  <input
+                    maxLength={200}
+                    value={
+                      sections.find((section) => section.type === 'footer')?.settings
+                        .copyrightText ?? ''
+                    }
+                    onChange={(e) =>
+                      updateSectionSettings('footer', (current) => ({
+                        ...current,
+                        settings: { ...current.settings, copyrightText: e.target.value },
+                      }))
+                    }
+                    className="mt-1 w-full rounded-xl border border-stone-300 p-2.5 text-xs"
+                  />
+                </label>
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-xs font-semibold text-stone-700">Search Preview</h3>
+                <label className="block text-xs text-stone-600">
+                  Page title
+                  <input
+                    maxLength={70}
+                    value={seo.title}
+                    onChange={(e) => setSeo({ ...seo, title: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-stone-300 p-2.5 text-xs"
+                  />
+                </label>
+                <label className="block text-xs text-stone-600">
+                  Search description
+                  <textarea
+                    rows={3}
+                    maxLength={180}
+                    value={seo.description}
+                    onChange={(e) => setSeo({ ...seo, description: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-stone-300 p-2.5 text-xs"
+                  />
+                </label>
+              </div>
             </div>
           )}
 

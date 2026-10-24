@@ -56,6 +56,29 @@ describe('Website publishing and public isolation', () => {
     expect(servicesSection.settings.description).toContain('laser dentistry');
   });
 
+  it('does not block publication when an optional postal code is not provided', async () => {
+    const app = createTestApp();
+    const { agent } = await authedAgent(app);
+    const initial = await agent.get('/api/v1/admin/website/draft');
+    const clinic = publishableTestClinic();
+    clinic.contact.postalCode = 'Not provided';
+    const csrf = await getCsrf(agent);
+
+    const saved = await agent.put('/api/v1/admin/website/draft').set('x-csrf-token', csrf).send({
+      expectedDraftVersion: initial.body.data.draftVersion,
+      clinic,
+      draft: createDefaultWebsiteSnapshot(),
+    });
+    expect(saved.status).toBe(200);
+
+    const publishCsrf = await getCsrf(agent);
+    const published = await agent
+      .post('/api/v1/admin/website/publish')
+      .set('x-csrf-token', publishCsrf)
+      .send({ expectedDraftVersion: saved.body.data.draftVersion });
+    expect(published.status).toBe(200);
+  });
+
   it('keeps drafts private until publish', async () => {
     const app = createTestApp();
     const { agent } = await authedAgent(app);

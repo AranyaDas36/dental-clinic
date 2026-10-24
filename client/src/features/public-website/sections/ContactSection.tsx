@@ -43,6 +43,8 @@ function toMinutes(value: string): number | null {
 }
 
 export function ContactSection({ clinic, settings }: ContactSectionProps) {
+  const postalCode = clinic.contact.postalCode.trim();
+  const hasPostalCode = postalCode.length > 0 && !/^(not provided|unknown|n\/a)$/i.test(postalCode);
   const currentStatus = useMemo(() => {
     const parts = new Intl.DateTimeFormat('en-US', {
       timeZone: 'Asia/Kolkata',
@@ -127,7 +129,8 @@ export function ContactSection({ clinic, settings }: ContactSectionProps) {
                   {clinic.contact.addressLine1}
                   {clinic.contact.addressLine2 ? `, ${clinic.contact.addressLine2}` : ''}
                   <br />
-                  {clinic.contact.city}, {clinic.contact.state} {clinic.contact.postalCode}
+                  {clinic.contact.city}, {clinic.contact.state}
+                  {hasPostalCode ? ` ${postalCode}` : ''}
                   <br />
                   {clinic.contact.country}
                 </p>
