@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { deleteAdminMedia, fetchAdminMedia, uploadAdminMedia } from '@/api/admin';
 
@@ -102,6 +103,15 @@ export function MediaManagerPage() {
           </button>
         </div>
       </div>
+
+      <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-950">
+        Uploading stores images in the library but does not add them to the public gallery. To show
+        photos on the website, select them in{' '}
+        <Link className="font-semibold underline" to="/admin/content">
+          Content &amp; Sections → Gallery Images
+        </Link>
+        , save your draft, and publish the changes.
+      </p>
 
       {/* Media Grid */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

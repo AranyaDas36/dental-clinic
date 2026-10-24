@@ -8,8 +8,6 @@ interface HeaderSectionProps {
   navigation: NavigationItem[];
   settings: {
     showLogo: boolean;
-    showCta: boolean;
-    cta?: { label: string; href: string };
   };
   layoutVariant?: string;
 }
@@ -77,16 +75,8 @@ export function HeaderSection({
           ))}
         </nav>
 
-        {/* CTA & Admin portal link */}
+        {/* Admin portal link */}
         <div className="hidden items-center gap-4 md:flex">
-          {settings.showCta && (
-            <a
-              href={settings.cta?.href || '#appointment'}
-              className="rounded-[var(--radius-button)] bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold !text-white shadow-xs transition hover:opacity-90 active:scale-98"
-            >
-              {settings.cta?.label || 'Request appointment'}
-            </a>
-          )}
           <a
             href="/admin/login"
             className="text-xs text-[var(--color-muted-text)] hover:text-[var(--color-primary)]"
@@ -98,14 +88,6 @@ export function HeaderSection({
 
         {/* Mobile menu button */}
         <div className="flex items-center gap-2 md:hidden">
-          {settings.showCta && (
-            <a
-              href={settings.cta?.href || '#appointment'}
-              className="rounded-[var(--radius-button)] bg-[var(--color-primary)] px-3 py-1.5 text-xs font-semibold !text-white"
-            >
-              Book
-            </a>
-          )}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

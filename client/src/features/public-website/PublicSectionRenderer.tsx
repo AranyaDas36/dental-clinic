@@ -52,7 +52,7 @@ export function PublicSectionRenderer({
           clinic={clinic}
           media={media}
           navigation={snapshot.navigation}
-          settings={headerSection.settings}
+          settings={{ showLogo: headerSection.settings.showLogo }}
           layoutVariant={headerSection.layoutVariant}
         />
       )}
