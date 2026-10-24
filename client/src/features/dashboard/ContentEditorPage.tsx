@@ -110,6 +110,16 @@ export function ContentEditorPage() {
     );
   }
 
+  function updateHeroText(field: 'headline' | 'subtitle', value: string) {
+    setSections((previous) =>
+      previous.map((section) =>
+        section.type === 'hero'
+          ? { ...section, settings: { ...section.settings, [field]: value } }
+          : section,
+      ),
+    );
+  }
+
   function toggleGalleryImage(imageMediaId: string, checked: boolean) {
     setSections((previous) =>
       previous.map((section) =>
@@ -599,7 +609,28 @@ export function ContentEditorPage() {
           </div>
 
           {heroSection && (
-            <div className="space-y-2 border-t border-stone-100 pt-4">
+            <div className="space-y-3 border-t border-stone-100 pt-4">
+              <h3 className="text-xs font-semibold text-stone-700">Hero Content</h3>
+              <label className="block text-xs text-stone-600">
+                Headline
+                <input
+                  type="text"
+                  maxLength={160}
+                  value={heroSection.settings.headline}
+                  onChange={(e) => updateHeroText('headline', e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-stone-300 p-2.5 text-xs"
+                />
+              </label>
+              <label className="block text-xs text-stone-600">
+                Supporting text
+                <textarea
+                  rows={3}
+                  maxLength={400}
+                  value={heroSection.settings.subtitle}
+                  onChange={(e) => updateHeroText('subtitle', e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-stone-300 p-2.5 text-xs"
+                />
+              </label>
               <label className="block text-xs font-semibold text-stone-700">Hero Image</label>
               <select
                 value={heroSection.settings.imageMediaId ?? ''}

@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchWebsiteDraft, publishWebsite } from '@/api/admin';
+import { ApiClientError } from '@/api/client';
 
 export function PublishBanner() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [changeSummary, setChangeSummary] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
 
   const draftQuery = useQuery({
     queryKey: ['admin', 'website', 'draft'],
@@ -32,6 +34,19 @@ export function PublishBanner() {
     },
     onError: (err: unknown) => {
       const msg = err instanceof Error ? err.message : 'Publish failed';
+      if (err instanceof ApiClientError && err.code === 'CONTENT_NOT_READY') {
+        const details = err.details as { fields?: unknown } | undefined;
+        const fields = Array.isArray(details?.fields)
+          ? details.fields.filter((field): field is string => typeof field === 'string')
+          : [];
+        setPublishError(
+          fields.length > 0
+            ? `${msg} Update these fields in Clinic Content & Sections: ${fields.join(', ')}`
+            : msg,
+        );
+      } else {
+        setPublishError(msg);
+      }
       setFeedback(`Error: ${msg}`);
     },
   });
@@ -117,10 +132,18 @@ export function PublishBanner() {
               />
             </div>
 
+            {publishError && (
+              <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-xs text-red-700">
+                {publishError}
+              </p>
+            )}
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setPublishError(null);
+                }}
                 className="rounded-xl border border-stone-200 px-4 py-2 text-xs font-medium text-stone-600 hover:bg-stone-50"
               >
                 Cancel

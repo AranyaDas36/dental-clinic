@@ -57,13 +57,54 @@ function serializeSnapshot(snapshot: unknown): WebsiteSnapshot {
   return websiteSnapshotSchema.parse(toPlain(snapshot));
 }
 
+function findTemplateContentFields(clinic: ClinicInfo, snapshot: WebsiteSnapshot): string[] {
+  const matches = new Set<string>();
+
+  function visit(value: unknown, path: string): void {
+    if (typeof value === 'string') {
+      if (TEMPLATE_MARKERS.some((marker) => value.toLowerCase().includes(marker))) {
+        matches.add(path);
+      }
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((item, index) => visit(item, `${path}[${index}]`));
+      return;
+    }
+    if (value && typeof value === 'object') {
+      for (const [key, item] of Object.entries(value)) {
+        if (key === 'id' || key.endsWith('MediaId')) continue;
+        if (key === 'sections' && Array.isArray(item)) {
+          item.forEach((section, index) => {
+            if (
+              section &&
+              typeof section === 'object' &&
+              'enabled' in section &&
+              section.enabled === true
+            ) {
+              visit(section, `${path}.${key}[${index}]`);
+            }
+          });
+          continue;
+        }
+        visit(item, `${path}.${key}`);
+      }
+    }
+  }
+
+  visit(clinic, 'clinic');
+  visit(snapshot, 'snapshot');
+  return [...matches];
+}
+
 function assertPublishableContent(clinic: ClinicInfo, snapshot: WebsiteSnapshot): void {
-  const content = JSON.stringify({ clinic, snapshot }).toLowerCase();
-  if (TEMPLATE_MARKERS.some((marker) => content.includes(marker))) {
+  const fields = findTemplateContentFields(clinic, snapshot);
+  if (fields.length > 0) {
     throw new AppError(
       422,
       'CONTENT_NOT_READY',
       'Replace template details and verify clinic information before publishing.',
+      { fields },
     );
   }
 }

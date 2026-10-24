@@ -169,6 +169,7 @@ describe('Website publishing and public isolation', () => {
       .send({ expectedDraftVersion: saved.body.data.draftVersion });
     expect(response.status).toBe(422);
     expect(response.body.error.code).toBe('CONTENT_NOT_READY');
+    expect(response.body.error.details.fields).toContain('snapshot.sections[1].settings.subtitle');
   });
 
   it('does not serve a previously published revision containing template content', async () => {
