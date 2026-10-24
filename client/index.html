@@ -4,7 +4,50 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="index,follow" />
-    <title>Placeholder Dental Clinic</title>
+    <meta
+      name="description"
+      content="Chakdaha Dental Clinic in Chakdaha, West Bengal offers root canal treatment (RCT). Meet Dr. Kalyan Das (BDS), see clinic hours and contact details, and request an appointment."
+    />
+    <link rel="canonical" href="https://dental-clinic-zeta-vert.vercel.app/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Chakdaha Dental Clinic | Dr. Kalyan Das, Chakdaha" />
+    <meta
+      property="og:description"
+      content="Chakdaha Dental Clinic in Chakdaha, West Bengal offers root canal treatment (RCT). Meet Dr. Kalyan Das (BDS), see clinic hours and contact details, and request an appointment."
+    />
+    <title>Chakdaha Dental Clinic | Dr. Kalyan Das, Chakdaha</title>
+    <style>
+      body {
+        margin: 0;
+        background: #f8fafc;
+        color: #0f172a;
+        font:
+          16px/1.65 system-ui,
+          sans-serif;
+      }
+      #seo-fallback {
+        box-sizing: border-box;
+        max-width: 56rem;
+        margin: 3rem auto;
+        padding: 2rem;
+      }
+      #seo-fallback h1,
+      #seo-fallback h2 {
+        line-height: 1.2;
+      }
+      #seo-fallback a {
+        color: #1e3a8a;
+      }
+      #root:not(:empty) + #seo-fallback {
+        display: none;
+      }
+      @media (max-width: 40rem) {
+        #seo-fallback {
+          margin: 1rem auto;
+          padding: 1.25rem;
+        }
+      }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -14,6 +57,29 @@
   </head>
   <body>
     <div id="root"></div>
+    <main id="seo-fallback">
+      <p><strong>Chakdaha Dental Clinic</strong> · Chakdaha, West Bengal</p>
+      <h1>Dental care with Dr. Kalyan Das</h1>
+      <p>
+        Visit Chakdaha Dental Clinic for root canal treatment (RCT). Dr. Kalyan Das holds a BDS
+        qualification. Contact the clinic to discuss treatment and availability.
+      </p>
+      <h2>Clinic location</h2>
+      <address>
+        Chakdaha Bus Stand, Opposite to Bank of India, 1st floor, Chakdaha, West Bengal 741222
+      </address>
+      <p><a href="tel:+917362990567">Call +91 73629 90567</a></p>
+      <p>
+        <strong>Clinic hours:</strong> Monday–Friday, 10:00 am–7:00 pm; Saturday, 10:00 am–2:00 pm;
+        Sunday closed.
+      </p>
+      <h2>Request an appointment</h2>
+      <p>
+        Send an appointment request online. The clinic will contact you to confirm; a request does
+        not reserve an appointment time.
+      </p>
+      <p><a href="#appointment">Request an appointment</a></p>
+    </main>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

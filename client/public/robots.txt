@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dental-clinic-zeta-vert.vercel.app/sitemap.xml
