@@ -24,6 +24,9 @@
     <meta property="og:image:alt" content="Dr. Kalyan Das at Chakdaha Dental Clinic" />
     <meta name="twitter:card" content="summary_large_image" />
     <title>Dr. Kalyan Das | Dentist in Lalpur, Chakdah</title>
+    <script>
+      document.documentElement.classList.add('js-enabled');
+    </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -110,10 +113,7 @@
       #seo-fallback a {
         color: #1e3a8a;
       }
-      html:not(.clinic-home-pending) #root:not(:empty) + #seo-fallback {
-        display: none;
-      }
-      html.clinic-home-pending #root {
+      html.js-enabled #seo-fallback {
         display: none;
       }
       @media (max-width: 40rem) {

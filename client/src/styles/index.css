@@ -176,6 +176,23 @@
   animation-play-state: paused !important;
 }
 
+.gallery-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.gallery-reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .why-visit-section {
   background:
     radial-gradient(

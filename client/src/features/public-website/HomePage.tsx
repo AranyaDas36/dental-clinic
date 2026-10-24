@@ -35,12 +35,6 @@ export function HomePage() {
     staleTime: 1000 * 60 * 5,
   });
 
-  useEffect(() => {
-    if (websiteQuery.data) {
-      document.documentElement.classList.remove('clinic-home-pending');
-    }
-  }, [websiteQuery.data]);
-
   // Apply published theme tokens to CSS custom properties
   useEffect(() => {
     if (websiteQuery.data?.snapshot.theme) {

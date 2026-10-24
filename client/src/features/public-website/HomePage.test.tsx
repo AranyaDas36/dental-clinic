@@ -208,11 +208,9 @@ function renderWithQuery(ui: React.ReactElement) {
 
 describe('HomePage', () => {
   it('renders published clinic branding, navigation, and hero headline', async () => {
-    document.documentElement.classList.add('clinic-home-pending');
     renderWithQuery(<HomePage />);
 
     const brandLinks = await screen.findAllByText(DEFAULT_CLINIC.name);
-    expect(document.documentElement).not.toHaveClass('clinic-home-pending');
     expect(brandLinks.length).toBeGreaterThan(0);
     expect(
       screen.getByRole('heading', {
