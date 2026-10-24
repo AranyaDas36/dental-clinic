@@ -6,16 +6,88 @@
     <meta name="robots" content="index,follow" />
     <meta
       name="description"
-      content="Chakdaha Dental Clinic in Chakdaha, West Bengal offers root canal treatment (RCT). Meet Dr. Kalyan Das (BDS), see clinic hours and contact details, and request an appointment."
+      content="Dr. Kalyan Das (BDS), dentist in Lalpur, Chakdah, Nadia. Chakdaha Dental Clinic lists root canal treatment. Contact the clinic to confirm availability or request an appointment."
     />
     <link rel="canonical" href="https://dental-clinic-zeta-vert.vercel.app/" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Chakdaha Dental Clinic | Dr. Kalyan Das, Chakdaha" />
+    <meta property="og:site_name" content="Chakdaha Dental Clinic" />
+    <meta property="og:url" content="https://dental-clinic-zeta-vert.vercel.app/" />
+    <meta property="og:title" content="Dr. Kalyan Das | Dentist in Lalpur, Chakdah" />
     <meta
       property="og:description"
-      content="Chakdaha Dental Clinic in Chakdaha, West Bengal offers root canal treatment (RCT). Meet Dr. Kalyan Das (BDS), see clinic hours and contact details, and request an appointment."
+      content="Dr. Kalyan Das (BDS), dentist in Lalpur, Chakdah, Nadia. Chakdaha Dental Clinic lists root canal treatment. Contact the clinic to confirm availability or request an appointment."
     />
-    <title>Chakdaha Dental Clinic | Dr. Kalyan Das, Chakdaha</title>
+    <meta
+      property="og:image"
+      content="https://res.cloudinary.com/qinlyvnw/image/upload/v1792835050/dental-clinic/zbpfrzj3h8yzemoy6qva.jpg"
+    />
+    <meta property="og:image:alt" content="Dr. Kalyan Das at Chakdaha Dental Clinic" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <title>Dr. Kalyan Das | Dentist in Lalpur, Chakdah</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Dentist",
+        "@id": "https://dental-clinic-zeta-vert.vercel.app/#clinic",
+        "name": "Chakdaha Dental Clinic",
+        "url": "https://dental-clinic-zeta-vert.vercel.app/",
+        "description": "Dr. Kalyan Das (BDS), dentist in Lalpur, Chakdah, Nadia. Chakdaha Dental Clinic lists root canal treatment. Contact the clinic to confirm availability or request an appointment.",
+        "telephone": "+91 7362990567",
+        "image": "https://res.cloudinary.com/qinlyvnw/image/upload/v1792835050/dental-clinic/zbpfrzj3h8yzemoy6qva.jpg",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Chakdaha Bus Stand, Opposite to Bank of India, 1st floor",
+          "addressLocality": "Chakdaha",
+          "addressRegion": "West Bengal",
+          "postalCode": "741222",
+          "addressCountry": "IN"
+        },
+        "openingHoursSpecification": [
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": [
+              "https://schema.org/Monday",
+              "https://schema.org/Tuesday",
+              "https://schema.org/Wednesday",
+              "https://schema.org/Thursday",
+              "https://schema.org/Friday"
+            ],
+            "opens": "10:00",
+            "closes": "19:00"
+          },
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": "https://schema.org/Saturday",
+            "opens": "10:00",
+            "closes": "14:00"
+          }
+        ],
+        "employee": {
+          "@type": "Person",
+          "name": "Dr. Kalyan Das",
+          "jobTitle": "General Dentist",
+          "hasCredential": {
+            "@type": "EducationalOccupationalCredential",
+            "credentialCategory": "degree",
+            "name": "BDS"
+          }
+        },
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Dental services",
+          "itemListElement": [
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "RCT",
+                "description": "Root Canal Treatment"
+              }
+            }
+          ]
+        }
+      }
+    </script>
     <style>
       body {
         margin: 0;
@@ -38,7 +110,10 @@
       #seo-fallback a {
         color: #1e3a8a;
       }
-      #root:not(:empty) + #seo-fallback {
+      html:not(.clinic-home-pending) #root:not(:empty) + #seo-fallback {
+        display: none;
+      }
+      html.clinic-home-pending #root {
         display: none;
       }
       @media (max-width: 40rem) {
@@ -58,15 +133,17 @@
   <body>
     <div id="root"></div>
     <main id="seo-fallback">
-      <p><strong>Chakdaha Dental Clinic</strong> · Chakdaha, West Bengal</p>
-      <h1>Dental care with Dr. Kalyan Das</h1>
+      <p><strong>Chakdaha Dental Clinic</strong> · Lalpur, Chakdah, Nadia, West Bengal</p>
+      <h1>Dr. Kalyan Das — Dentist in Lalpur, Chakdah</h1>
       <p>
-        Visit Chakdaha Dental Clinic for root canal treatment (RCT). Dr. Kalyan Das holds a BDS
-        qualification. Contact the clinic to discuss treatment and availability.
+        Dr. Kalyan Das (BDS) provides dental care at Chakdaha Dental Clinic. Root canal treatment
+        (RCT) is listed among the clinic's services. Contact the clinic to confirm available
+        services, fees, and appointment times.
       </p>
-      <h2>Clinic location</h2>
+      <h2>Clinic address and contact</h2>
       <address>
-        Chakdaha Bus Stand, Opposite to Bank of India, 1st floor, Chakdaha, West Bengal 741222
+        Chakdaha Bus Stand, Opposite to Bank of India, 1st floor, Chakdaha, Nadia, West Bengal
+        741222, India
       </address>
       <p><a href="tel:+917362990567">Call +91 73629 90567</a></p>
       <p>
@@ -75,10 +152,12 @@
       </p>
       <h2>Request an appointment</h2>
       <p>
-        Send an appointment request online. The clinic will contact you to confirm; a request does
-        not reserve an appointment time.
+        Call the clinic to discuss care and confirm appointment availability. Appointment times are
+        confirmed by the clinic.
       </p>
-      <p><a href="#appointment">Request an appointment</a></p>
+      <p>
+        <a href="tel:+917362990567">Call the clinic to request an appointment</a>
+      </p>
     </main>
     <script type="module" src="/src/main.tsx"></script>
   </body>

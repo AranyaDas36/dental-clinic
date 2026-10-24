@@ -7,7 +7,7 @@ import {
   type PublicServiceItem,
 } from '@/api/public';
 import { applyThemeTokens } from '@/lib/theme';
-import { SEOHead } from './SEOHead';
+import { CLINIC_HERO_HEADLINE, SEOHead } from './SEOHead';
 import { PublicSectionRenderer } from './PublicSectionRenderer';
 
 export function HomePage() {
@@ -34,6 +34,12 @@ export function HomePage() {
     retry: 1,
     staleTime: 1000 * 60 * 5,
   });
+
+  useEffect(() => {
+    if (websiteQuery.data) {
+      document.documentElement.classList.remove('clinic-home-pending');
+    }
+  }, [websiteQuery.data]);
 
   // Apply published theme tokens to CSS custom properties
   useEffect(() => {
@@ -122,20 +128,40 @@ export function HomePage() {
   const { snapshot, clinic } = websiteQuery.data;
   const services = servicesQuery.data?.items || [];
   const reviews = reviewsQuery.data?.items || [];
+  const isPrimaryClinic =
+    clinic.name === 'Chakdaha Dental Clinic' && clinic.dentist.name === 'Dr. Kalyan Das';
+  const renderedSnapshot = isPrimaryClinic
+    ? {
+        ...snapshot,
+        sections: snapshot.sections.map((section) =>
+          section.type === 'hero'
+            ? {
+                ...section,
+                settings: { ...section.settings, headline: CLINIC_HERO_HEADLINE },
+              }
+            : section,
+        ),
+      }
+    : snapshot;
+  const dentistPortraitUrl = clinic.dentist.portraitMediaId
+    ? websiteQuery.data.media[clinic.dentist.portraitMediaId]?.url
+    : null;
 
   return (
     <>
       <SEOHead
         seo={snapshot.seo}
         clinicName={clinic.name}
+        clinic={clinic}
+        services={services}
         socialImageUrl={
           snapshot.seo.socialImageMediaId
             ? websiteQuery.data.media[snapshot.seo.socialImageMediaId]?.url
-            : null
+            : dentistPortraitUrl
         }
       />
       <PublicSectionRenderer
-        snapshot={snapshot}
+        snapshot={renderedSnapshot}
         clinic={clinic}
         media={websiteQuery.data.media ?? {}}
         services={services}

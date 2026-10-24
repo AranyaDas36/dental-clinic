@@ -1,8 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_CLINIC } from '@dental/shared';
 import { HomePage } from './HomePage';
+
+afterEach(() => {
+  document.documentElement.classList.remove('clinic-home-pending');
+});
 
 const { mockSnapshot } = vi.hoisted(() => {
   return {
@@ -204,13 +208,15 @@ function renderWithQuery(ui: React.ReactElement) {
 
 describe('HomePage', () => {
   it('renders published clinic branding, navigation, and hero headline', async () => {
+    document.documentElement.classList.add('clinic-home-pending');
     renderWithQuery(<HomePage />);
 
     const brandLinks = await screen.findAllByText(DEFAULT_CLINIC.name);
+    expect(document.documentElement).not.toHaveClass('clinic-home-pending');
     expect(brandLinks.length).toBeGreaterThan(0);
     expect(
       screen.getByRole('heading', {
-        name: /Gentle dental care in a calm clinic setting/i,
+        name: /Dr\. Kalyan Das.*Dentist in Lalpur, Chakdah/i,
       }),
     ).toBeInTheDocument();
     expect(document.querySelector('.hero-illustration')).toHaveAttribute('aria-hidden', 'true');
